@@ -8,7 +8,7 @@ La solución busca centralizar en un mismo entorno digital documentos como **exp
 
 Reducir el tiempo que los profesionales del derecho destinan a tareas repetitivas relacionadas con la revisión y búsqueda de información documental, proporcionando herramientas que apoyen su trabajo sin sustituir su criterio profesional.
 
-## 🤖 Funcionalidades principales
+## 🤖 Funcionalidades principales Futuros
 
 La plataforma permitirá:
 
@@ -21,6 +21,46 @@ La plataforma permitirá:
 * 🗂️ Centralizar información relacionada con casos, contratos y expedientes.
 
 > **La inteligencia artificial funciona como una herramienta de apoyo. Las decisiones, interpretaciones y documentos finales deben ser revisados y validados por un profesional del derecho.**
+
+## 🚧 Estado actual del proyecto
+
+Actualmente se encuentra implementada la primera etapa del backend.
+
+### Módulos implementados
+
+- Roles
+- Usuarios
+- Clientes
+- Documentos
+
+### Arquitectura
+
+El backend utiliza una arquitectura por capas:
+
+- Controllers
+- DTOs
+- Entities
+- Repositories
+- Services
+- Security
+- Configuration
+
+### Tecnologías
+
+- Java
+- Spring Boot
+- Spring Data JPA
+- Hibernate
+- Maven
+- Swagger / OpenAPI
+- Base de datos relacional
+
+## 📚 Swagger
+
+Después de iniciar la aplicación, la documentación de la API se encuentra en:
+
+```text
+http://localhost:8080/swagger-ui/index.html
 
 ## 🏗️ Arquitectura general
 
