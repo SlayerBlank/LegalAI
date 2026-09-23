@@ -27,7 +27,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
-@Tag(name = "Clientes", description = "Operaciones relacionadas con la gestión de clientes")
+@Tag(name = "Clientes", description = "Cambios")
 public class ClientController {
 
     private final ClientService clientService;
