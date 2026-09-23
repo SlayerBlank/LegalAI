@@ -1,5 +1,6 @@
 package pe.edu.upc.legalai.servicesimplements;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Documento;
@@ -9,8 +10,8 @@ import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.DocumentoRepository;
 import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.schemas.dtos.request.DocumentoRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -24,13 +25,15 @@ public class DocumentoServiceImpl implements DocumentoService {
     private final ExpedienteRepository expedienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
+    private final ModelMapper modelMapper;
 
     public DocumentoServiceImpl(DocumentoRepository documentoRepository, ExpedienteRepository expedienteRepository,
-                                UsuarioService usuarioService, AuditLogService auditLogService) {
+                                UsuarioService usuarioService, AuditLogService auditLogService, ModelMapper modelMapper) {
         this.documentoRepository = documentoRepository;
         this.expedienteRepository = expedienteRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -85,11 +88,7 @@ public class DocumentoServiceImpl implements DocumentoService {
     }
 
     private void applyRequest(Documento documento, DocumentoRequestDTO request) {
-        documento.setFileName(request.getFileName());
-        documento.setFileType(request.getFileType());
-        documento.setStorageUrl(request.getStorageUrl());
-        documento.setCategory(request.getCategory());
-        documento.setSizeBytes(request.getSizeBytes());
+        modelMapper.map(request, documento);
     }
 
     private DocumentoResponseDTO toResponse(Documento documento) {

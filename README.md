@@ -8,10 +8,21 @@ Los documentos contienen únicamente metadatos: el endpoint no recibe archivos b
 `storageUrl` ni procesa el contenido. Las funcionalidades de IA descritas en la visión al final de
 este documento son futuras y no están implementadas.
 
-Se conserva el paquete `pe.edu.upc.legalai` y la estructura existente: `controllers`, `entities`,
+Se conserva el paquete `pe.edu.upc.legalai` y la estructura existente: `config`, `controllers`, `entities`,
 `exceptions`, `repositories`, `schemas/dtos/request`, `schemas/dtos/response`, `securities`,
 `servicesimplements` y `servicesinterfaces`. Los enums y `ErrorResponse` existentes conservan
 su ubicación; no se movieron archivos ni se añadieron dependencias.
+
+## Regla de arquitectura: config/ y ModelMapper
+
+`config/` contiene configuraciones generales del proyecto e incluye `ModelMapperConfig.java`.
+`SwaggerConfig`, `WebSecurityConfig` y `CorsConfig` permanecen en `securities/`.
+
+ModelMapper se utiliza para conversiones simples entre Entities y DTOs, con una lista
+explicita de campos permitidos y mapeo implicito desactivado. Las relaciones entre entidades,
+IDs de propietarios, usuarios autenticados y campos sensibles deben asignarse explicitamente
+en `ServiceImpl`, nunca mediante mapeo automatico. Las reglas sobre estados y fechas
+permanecen en los servicios.
 
 ## Ejecución local
 

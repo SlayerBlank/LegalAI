@@ -1,5 +1,6 @@
 package pe.edu.upc.legalai.servicesimplements;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Cliente;
@@ -10,8 +11,8 @@ import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.repositories.ClienteRepository;
 import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.schemas.dtos.request.ExpedienteRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -26,13 +27,15 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final ClienteRepository clienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
+    private final ModelMapper modelMapper;
 
     public ExpedienteServiceImpl(ExpedienteRepository expedienteRepository, ClienteRepository clienteRepository,
-                                 UsuarioService usuarioService, AuditLogService auditLogService) {
+                                 UsuarioService usuarioService, AuditLogService auditLogService, ModelMapper modelMapper) {
         this.expedienteRepository = expedienteRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -133,8 +136,7 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (closedAt != null && closedAt.isBefore(openedAt)) {
             throw new BadRequestException("La fecha de cierre no puede ser anterior a la fecha de apertura");
         }
-        expediente.setTitle(request.getTitle());
-        expediente.setDescription(request.getDescription());
+        modelMapper.map(request, expediente);
         expediente.setStatus(status);
         expediente.setOpenedAt(openedAt);
         expediente.setClosedAt(closedAt);

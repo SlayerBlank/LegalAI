@@ -1,13 +1,14 @@
 package pe.edu.upc.legalai.servicesimplements;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.ClienteRepository;
-import pe.edu.upc.legalai.schemas.dtos.request.ClienteRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.ClienteResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.ClienteService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -20,12 +21,14 @@ public class ClienteServiceImpl implements ClienteService {
     private final ClienteRepository clienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
+    private final ModelMapper modelMapper;
 
     public ClienteServiceImpl(ClienteRepository clienteRepository, UsuarioService usuarioService,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService, ModelMapper modelMapper) {
         this.clienteRepository = clienteRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -82,12 +85,7 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     private void applyRequest(Cliente cliente, ClienteRequestDTO request) {
-        cliente.setClientType(request.getClientType());
-        cliente.setFullNameOrCompany(request.getFullNameOrCompany());
-        cliente.setDocumentNumber(request.getDocumentNumber());
-        cliente.setEmail(request.getEmail());
-        cliente.setPhone(request.getPhone());
-        cliente.setAddress(request.getAddress());
+        modelMapper.map(request, cliente);
     }
 
     private ClienteResponseDTO toResponse(Cliente cliente) {

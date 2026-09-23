@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.schemas.dtos.request.AuthLoginRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.request.AuthRegisterRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.AuthResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.AuthLoginRequestDTO;
+import pe.edu.upc.legalai.DTOs.request.AuthRegisterRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.AuthResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuthService;
 
 @RestController

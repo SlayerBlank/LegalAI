@@ -1,6 +1,6 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.schemas.dtos.response.RolResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.RolResponseDTO;
 
 import java.util.List;
 

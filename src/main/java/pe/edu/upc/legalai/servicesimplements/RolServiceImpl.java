@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Rol;
 import pe.edu.upc.legalai.repositories.RolRepository;
-import pe.edu.upc.legalai.schemas.dtos.response.RolResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.RolResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.RolService;
 
 import java.util.List;
