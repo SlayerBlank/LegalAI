@@ -25,7 +25,7 @@ public class CitacionesIA {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id")
-    private Document documento;
+    private Documento documento;
 
     @Column(name = "chunk_id")
     private Long chunkId;
@@ -49,11 +49,11 @@ public class CitacionesIA {
         this.mensaje = mensaje;
     }
 
-    public Document getDocumento() {
+    public Documento getDocumento() {
         return documento;
     }
 
-    public void setDocumento(Document documento) {
+    public void setDocumento(Documento documento) {
         this.documento = documento;
     }
 
