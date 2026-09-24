@@ -1,4 +1,4 @@
-package pe.edu.upc.legalai.schemas.dtos.response;
+package pe.edu.upc.legalai.DTOs.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import pe.edu.upc.legalai.entities.EstadoExpediente;

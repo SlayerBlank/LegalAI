@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.schemas.dtos.request.ClienteRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.ClienteResponseDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ClienteResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.ClienteService;
 import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
 

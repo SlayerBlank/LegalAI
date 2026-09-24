@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.UnauthorizedException;
 import pe.edu.upc.legalai.repositories.UsuarioRepository;
-import pe.edu.upc.legalai.schemas.dtos.response.UsuarioResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.UsuarioResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
 
 @Service

@@ -1,7 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.schemas.dtos.request.ClienteRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.ClienteResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ClienteResponseDTO;
 
 import java.util.List;
 
