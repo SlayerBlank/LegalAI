@@ -11,8 +11,8 @@ import pe.edu.upc.legalai.exceptions.UnauthorizedException;
 import pe.edu.upc.legalai.repositories.ExpedienteRepository;
 import pe.edu.upc.legalai.repositories.SesionChatRepository;
 import pe.edu.upc.legalai.repositories.UsuarioRepository;
-import pe.edu.upc.legalai.schemas.dtos.request.SesionChatRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.SesionChatRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package pe.edu.upc.legalai.schemas.dtos.request;
+package pe.edu.upc.legalai.DTOs.request;
 
 import jakarta.validation.constraints.Size;
 

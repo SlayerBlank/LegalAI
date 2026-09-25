@@ -1,4 +1,4 @@
-package pe.edu.upc.legalai.schemas.dtos.response;
+package pe.edu.upc.legalai.DTOs.response;
 
 import java.time.LocalDateTime;
 

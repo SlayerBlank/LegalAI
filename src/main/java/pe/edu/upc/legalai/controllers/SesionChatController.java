@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.schemas.dtos.request.SesionChatRequestDTO;
-import pe.edu.upc.legalai.schemas.dtos.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.DTOs.request.SesionChatRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
 
 import java.util.List;

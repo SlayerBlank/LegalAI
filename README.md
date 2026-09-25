@@ -8,10 +8,20 @@ Los documentos contienen únicamente metadatos: el endpoint no recibe archivos b
 `storageUrl` ni procesa el contenido. Las funcionalidades de IA descritas en la visión al final de
 este documento son futuras y no están implementadas.
 
-Se conserva el paquete `pe.edu.upc.legalai` y la estructura existente: `config`, `controllers`, `entities`,
-`exceptions`, `repositories`, `schemas/dtos/request`, `schemas/dtos/response`, `securities`,
-`servicesimplements` y `servicesinterfaces`. Los enums y `ErrorResponse` existentes conservan
-su ubicación; no se movieron archivos ni se añadieron dependencias.
+Se conserva el paquete `pe.edu.upc.legalai` y sus capas. Esta corrección de línea base no mueve DTOs:
+se preservan los cambios de ubicación e imports que ya estaban presentes en el árbol de trabajo.
+La auditoría anterior documentó la coexistencia de `DTOs/` y `schemas/dtos/`; al iniciar esta
+corrección, los dos DTOs de `SesionChat` ya estaban movidos a `DTOs/`. La normalización de paquetes
+y su documentación quedan como deuda técnica, fuera de esta corrección de compilación.
+
+`ClienteController` es el único controller de clientes. Se retiró `ClientController`, que dependía
+de tipos inexistentes y duplicaba rutas; su ruta por usuario no tenía servicio implementado.
+`CitacionesIA` referencia ahora a `Documento`, dentro del mismo paquete, conservando `document_id`.
+La relación de `Mensajes` con `SesionChat` sigue comentada: no bloquea compilación y se completará
+en la fase de IA/chat. No se ha añadido conversación funcional, procesamiento documental ni IA.
+
+El POM conserva una sola declaración de Security administrada por Spring Boot y una de Lombok.
+Se retiró JJWT porque ninguna clase lo usa; la implementación JWT existente permanece intacta.
 
 ## Regla de arquitectura: config/ y ModelMapper
 
@@ -26,7 +36,9 @@ permanecen en los servicios.
 
 ## Ejecución local
 
-Requisitos: JDK 21 o posterior, `JAVA_HOME` configurado y la base PostgreSQL `LEGALAI` creada en localhost.
+Requisitos: JDK 21, `JAVA_HOME` configurado y la base PostgreSQL `LEGALAI` creada en localhost.
+Utilizar Java 21 también para las pruebas: en la verificación con JDK 26, ModelMapper 3.2.6 falló
+al crear proxies (`UnsupportedOperationException` en `JdkClassWriter`), aunque el código compilaba.
 `application.properties` contiene la configuración general y activa e incluye el perfil `local`.
 `application-local.properties` contiene únicamente el usuario `postgres` y la contraseña local;
 reemplazar `[PASSWORD LOCAL]` por la contraseña de PostgreSQL.
