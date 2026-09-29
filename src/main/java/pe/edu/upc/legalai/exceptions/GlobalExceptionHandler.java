@@ -25,6 +25,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(IAServiceException.class)
+    public ResponseEntity<ErrorResponse> handleIAService(IAServiceException ex, HttpServletRequest request) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
