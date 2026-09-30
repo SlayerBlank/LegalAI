@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.DTOs.response.AuditLogResponseDTO;
 import pe.edu.upc.legalai.entities.AuditLog;
 import pe.edu.upc.legalai.entities.Usuario;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.AuditLogRepository;
 import pe.edu.upc.legalai.repositories.AuditLogSpecifications;
@@ -41,6 +42,9 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Transactional(readOnly = true)
     public Page<AuditLogResponseDTO> buscar(Long userId, String action, String entityType,
                                              LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BadRequestException("La fecha 'from' no puede ser posterior a 'to'");
+        }
         var spec = AuditLogSpecifications.conFiltros(userId, action, entityType, from, to);
         return auditLogRepository.findAll(spec, pageable).map(this::toResponse);
     }
