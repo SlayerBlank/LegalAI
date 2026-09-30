@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pe.edu.upc.legalai.DTOs.response.AuditLogResponseDTO;
 import pe.edu.upc.legalai.controllers.AuditLogController;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.GlobalExceptionHandler;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
@@ -84,6 +85,17 @@ class AuditLogControllerTest {
                 eq(LocalDateTime.parse("2026-01-01T00:00:00")),
                 eq(LocalDateTime.parse("2026-01-31T23:59:59")),
                 any(Pageable.class));
+    }
+
+    @Test
+    void buscarConRangoDeFechasInvertidoDevuelve400() throws Exception {
+        when(service.buscar(isNull(), isNull(), isNull(), any(), any(), any(Pageable.class)))
+                .thenThrow(new BadRequestException("La fecha 'from' no puede ser posterior a 'to'"));
+
+        mvc.perform(get("/api/audit-logs")
+                        .param("from", "2026-02-01T00:00:00")
+                        .param("to", "2026-01-01T00:00:00"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
