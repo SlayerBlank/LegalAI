@@ -1,5 +1,7 @@
 package pe.edu.upc.legalai.servicesimplements;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,8 +10,10 @@ import pe.edu.upc.legalai.entities.AuditLog;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.AuditLogRepository;
+import pe.edu.upc.legalai.repositories.AuditLogSpecifications;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -35,10 +39,10 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AuditLogResponseDTO> listar() {
-        return auditLogRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<AuditLogResponseDTO> buscar(Long userId, String action, String entityType,
+                                             LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        var spec = AuditLogSpecifications.conFiltros(userId, action, entityType, from, to);
+        return auditLogRepository.findAll(spec, pageable).map(this::toResponse);
     }
 
     @Override
