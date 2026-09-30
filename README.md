@@ -75,6 +75,8 @@ sin añadir el prefijo `Bearer`. Registro y login son públicos; los demás endp
 | Documentos de un expediente | `POST, GET /api/cases/{caseId}/documents` |
 | Carga PDF | `POST /api/cases/{caseId}/documents/upload` (`multipart/form-data`) |
 | Documento | `GET, DELETE /api/documents/{id}` |
+| Fragmentos de documento | `POST, GET /api/documents/{documentId}/chunks` |
+| Auditoría (solo lectura) | `GET /api/audit-logs` (paginado, filtros `userId`, `action`, `entityType`, `from`, `to`); `GET /api/audit-logs/{id}`; `GET /api/audit-logs/usuario/{userId}` |
 
 Registro de ejemplo:
 
@@ -96,7 +98,10 @@ preceder a la apertura. Los errores de la API incluyen `status`, `message`, `tim
 
 La auditoría registra login y las operaciones solicitadas sobre clientes, expedientes y documentos.
 Comparte la transacción de la operación: si esta falla, tampoco se confirma el registro de auditoría.
-No hay endpoint público para consultar auditoría en esta fase.
+Es de solo lectura vía API: `GET /api/audit-logs` acepta paginación estándar de Spring (`page`, `size`,
+`sort`) y filtros opcionales combinables por `userId`, `action`, `entityType` y rango de fechas
+(`from`/`to`, ISO-8601). No existe endpoint para crear, editar o eliminar registros de auditoría
+manualmente; solo se generan como efecto secundario de otras operaciones.
 
 ## Carga de PDF
 
