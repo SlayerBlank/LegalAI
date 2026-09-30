@@ -10,6 +10,11 @@ import java.util.Optional;
 @Repository
 public interface DocumentoRepository extends JpaRepository<Documento, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select d from Documento d where d.documentId = :id and d.expediente.owner.userId = :userId")
+    Optional<Documento> findOwnedForProcessing(@org.springframework.data.repository.query.Param("id") Long id,
+                                             @org.springframework.data.repository.query.Param("userId") Long userId);
+
     List<Documento> findByExpedienteCaseIdAndExpedienteOwnerUserId(Long caseId, Long userId);
 
     Optional<Documento> findByDocumentIdAndExpedienteOwnerUserId(Long documentId, Long userId);

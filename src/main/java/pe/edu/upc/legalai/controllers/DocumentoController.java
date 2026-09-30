@@ -7,10 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.DocumentoTextResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
+import pe.edu.upc.legalai.servicesinterfaces.DocumentoProcessingService;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -18,9 +21,27 @@ import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
 public class DocumentoController {
 
     private final DocumentoService documentoService;
+    private final DocumentoProcessingService processingService;
 
-    public DocumentoController(DocumentoService documentoService) {
+    public DocumentoController(DocumentoService documentoService,
+            DocumentoProcessingService processingService) {
         this.documentoService = documentoService;
+        this.processingService = processingService;
+    }
+
+    @Operation(summary = "Extraer texto del PDF", description = "Procesa un PDF propio con texto seleccionable. No realiza OCR.")
+    @ApiResponse(responseCode = "200", description = "Texto extraido y documento procesado")
+    @ApiResponse(responseCode = "409", description = "El documento ya se esta procesando")
+    @PostMapping("/{documentId}/process")
+    public ResponseEntity<DocumentoResponseDTO> procesar(@PathVariable Long documentId) {
+        return ResponseEntity.ok(processingService.procesar(documentId));
+    }
+
+    @Operation(summary = "Consultar texto extraido", description = "Devuelve el texto de un documento propio; text es null si no tiene extraccion.")
+    @ApiResponse(responseCode = "200", description = "Texto del documento")
+    @GetMapping("/{documentId}/text")
+    public ResponseEntity<DocumentoTextResponseDTO> obtenerTexto(@PathVariable Long documentId) {
+        return ResponseEntity.ok(processingService.obtenerTexto(documentId));
     }
 
     @Operation(summary = "Obtener documento", description = "Obtiene metadatos de un documento propio")

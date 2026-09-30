@@ -18,6 +18,13 @@ public class DocumentoResponseDTO {
     private EstadoProcesamiento processingStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private int extractedTextLength;
+
+    public boolean getHasExtractedText() { return extractedTextLength > 0; }
+
+    public int getExtractedTextLength() { return extractedTextLength; }
+
+    public void setExtractedTextLength(int extractedTextLength) { this.extractedTextLength = extractedTextLength; }
 
     public DocumentoResponseDTO(Long documentId, Long caseId, String fileName, String fileType, String storageUrl,
                                 String category, Long sizeBytes, EstadoProcesamiento processingStatus,

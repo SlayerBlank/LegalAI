@@ -30,6 +30,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class LegalAiApplicationTests {
 
+    @org.junit.jupiter.api.io.TempDir
+    static java.nio.file.Path uploadStorage;
+
+    @org.springframework.test.context.DynamicPropertySource
+    static void uploadProperties(org.springframework.test.context.DynamicPropertyRegistry registry) {
+        registry.add("legalai.storage.path", () -> uploadStorage.toString());
+        registry.add("legalai.documents.max-file-size", () -> "1KB");
+    }
+
     @Value("${local.server.port}")
     private int port;
 
@@ -297,6 +306,21 @@ class LegalAiApplicationTests {
         JsonNode schemes = docs.path("components").path("securitySchemes");
         assertThat(schemes.path("Bearer Token").path("scheme").asText()).isEqualTo("bearer");
         assertThat(docs.toString()).doesNotContain("passwordHash");
+        JsonNode upload = docs.path("paths").path("/api/cases/{caseId}/documents/upload").path("post");
+        JsonNode uploadSchema = upload.path("requestBody").path("content").path("multipart/form-data").path("schema");
+        if (uploadSchema.has("$ref")) {
+            uploadSchema = docs.at(uploadSchema.path("$ref").asText().substring(1));
+        }
+        assertThat(uploadSchema.path("properties").path("file").path("format").asText()).isEqualTo("binary");
+        assertThat(uploadSchema.path("properties").path("category").path("type").asText()).isEqualTo("string");
+        assertThat(upload.toString()).contains("category", "caseId");
+        for (String status : java.util.List.of("201", "400", "401", "403", "404", "413", "500")) {
+            assertThat(upload.path("responses").has(status)).as("upload " + status).isTrue();
+            if (!status.equals("201")) {
+                assertThat(upload.path("responses").path(status).path("content").path("application/json")
+                        .path("schema").path("$ref").asText()).endsWith("ErrorResponse");
+            }
+        }
         Map<String, java.util.List<String>> endpoints = Map.ofEntries(
                 Map.entry("/api/auth/register", java.util.List.of("post")),
                 Map.entry("/api/auth/login", java.util.List.of("post")),
@@ -352,9 +376,164 @@ class LegalAiApplicationTests {
         assertThat(jdbc.queryForObject("select count(*) from users where email = ?", Long.class, email)).isEqualTo(1);
     }
 
+    @Test
+    void realMultipartPersistsFileMetadataAuditAndEnforcesOwnershipAndLimit() throws Exception {
+        JsonNode auth = register();
+        String owner = auth.path("accessToken").asText();
+        long userId = auth.path("user").path("userId").asLong();
+        long caseId = json(call("POST", "/api/cases", owner,
+                Map.of("clientId", createClient(owner), "title", "Carga PDF"), 201)).path("caseId").asLong();
+        String pdf = "%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n";
+        String foreignToken = register().path("accessToken").asText();
+        upload(caseId, foreignToken, pdf, 404);
+        upload(Long.MAX_VALUE, owner, pdf, 404);
+        upload(caseId, null, pdf, 401);
+        upload(caseId, owner, "%PDF-1.7\n" + "x".repeat(1024), 413);
+        assertThat(jdbc.queryForObject("select count(*) from documents where case_id = ?", Long.class, caseId)).isZero();
+        JsonNode result = json(upload(caseId, owner, pdf, 201));
+        long documentId = result.path("documentId").asLong();
+        assertThat(result.path("sizeBytes").asLong()).isEqualTo(pdf.getBytes(StandardCharsets.UTF_8).length);
+        assertThat(result.path("processingStatus").asText()).isEqualTo("UPLOADED");
+        assertThat(result.path("fileName").asText()).isEqualTo("contrato.pdf");
+        assertThat(result.path("category").asText()).isEqualTo("Contrato");
+        String storageId = result.path("storageUrl").asText();
+        assertThat(storageId).matches("[a-f0-9-]{36}\\.pdf");
+        assertThat(java.nio.file.Files.readString(uploadStorage.resolve(storageId))).isEqualTo(pdf);
+        assertThat(jdbc.queryForObject("select uploaded_by_user_id from documents where document_id = ?", Long.class, documentId))
+                .isEqualTo(userId);
+        assertThat(jdbc.queryForObject("select details from audit_logs where action = 'UPLOAD_DOCUMENT' and entity_id = ? and user_id = ?",
+                String.class, documentId, userId)).isEqualTo("caseId=" + caseId + "; fileName=contrato.pdf");
+    }
+
+    private HttpResponse<String> upload(long caseId, String token, String pdf, int expected) throws Exception {
+        String boundary = "LegalAI" + UUID.randomUUID();
+        String body = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"contrato.pdf\"\r\n"
+                + "Content-Type: application/pdf\r\n\r\n" + pdf + "\r\n--" + boundary
+                + "\r\nContent-Disposition: form-data; name=\"category\"\r\n\r\nContrato\r\n--" + boundary + "--\r\n";
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/cases/" + caseId + "/documents/upload"))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary);
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        var response = http.send(request.POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).as(response.body()).isEqualTo(expected);
+        if (expected != 201) assertThat(json(response).path("status").asInt()).isEqualTo(expected);
+        return response;
+    }
+
+    @Test
+    void processesRealPdfAndProtectsTextAndPersistsErrors() throws Exception {
+        JsonNode auth = register();
+        String token = auth.path("accessToken").asText();
+        long caseId = json(call("POST", "/api/cases", token,
+                Map.of("clientId", createClient(token), "title", "Extraccion PDF"), 201)).path("caseId").asLong();
+        java.nio.file.Path pdf = uploadStorage.resolve("processing-test.pdf");
+        DocumentoProcessingTest.pdf(pdf, "Contrato de prueba LegalAI");
+        long id = json(call("POST", "/api/cases/" + caseId + "/documents", token,
+                Map.of("fileName", "test.pdf", "fileType", "application/pdf", "storageUrl", pdf.getFileName().toString(),
+                        "category", "CONTRACT", "sizeBytes", java.nio.file.Files.size(pdf)), 201)).path("documentId").asLong();
+        String endpoint = "/api/documents/" + id;
+        String foreign = register().path("accessToken").asText();
+        call("POST", endpoint + "/process", null, null, 401);
+        call("GET", endpoint + "/text", null, null, 401);
+        call("POST", endpoint + "/process", foreign, null, 404);
+        call("GET", endpoint + "/text", foreign, null, 404);
+        call("POST", "/api/documents/9223372036854775807/process", token, null, 404);
+        JsonNode result = json(call("POST", endpoint + "/process", token, null, 200));
+        assertThat(result.path("processingStatus").asText()).isEqualTo("PROCESSED");
+        assertThat(result.path("hasExtractedText").asBoolean()).isTrue();
+        assertThat(result.path("extractedTextLength").asInt()).isEqualTo(26);
+        assertThat(result.has("extractedText")).isFalse();
+        assertThat(json(call("GET", endpoint + "/text", token, null, 200)).path("text").asText()).isEqualTo("Contrato de prueba LegalAI");
+        assertThat(jdbc.queryForObject("select extracted_text from documents where document_id=?", String.class, id)).isEqualTo("Contrato de prueba LegalAI");
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where entity_id=? and action='PROCESS_DOCUMENT'", Long.class, id)).isEqualTo(1);
+        assertThat(json(call("POST", endpoint + "/chunks", token, null, 200)).path("chunksCreated").asInt()).isEqualTo(1);
+        jdbc.execute("alter table audit_logs add constraint test_processing_audit_failure check (action <> 'PROCESS_DOCUMENT') not valid");
+        try {
+            call("POST", endpoint + "/process", token, null, 500);
+            assertThat(jdbc.queryForObject("select processing_status from documents where document_id=?", String.class, id)).isEqualTo("ERROR");
+            assertThat(jdbc.queryForObject("select extracted_text from documents where document_id=?", String.class, id)).isNull();
+            assertThat(jdbc.queryForObject("select count(*) from document_chunks where document_id=?", Long.class, id)).isZero();
+            assertThat(jdbc.queryForObject("select count(*) from audit_logs where entity_id=? and action='PROCESS_DOCUMENT'", Long.class, id)).isEqualTo(1);
+        } finally {
+            jdbc.execute("alter table audit_logs drop constraint test_processing_audit_failure");
+        }
+        call("POST", endpoint + "/process", token, null, 200);
+        java.nio.file.Files.delete(pdf);
+        call("POST", endpoint + "/process", token, null, 500);
+        assertThat(jdbc.queryForObject("select processing_status from documents where document_id=?", String.class, id)).isEqualTo("ERROR");
+        assertThat(jdbc.queryForObject("select extracted_text from documents where document_id=?", String.class, id)).isNull();
+        JsonNode docs = json(call("GET", "/v3/api-docs", null, null, 200));
+        assertThat(docs.path("paths").has("/api/documents/{documentId}/process")).isTrue();
+        assertThat(docs.path("paths").has("/api/documents/{documentId}/text")).isTrue();
+    }
+
     private long createClient(String token) throws Exception {
         return json(call("POST", "/api/clients", token,
                 Map.of("clientType", "PERSON", "fullNameOrCompany", "Cliente de prueba"), 201)).path("clientId").asLong();
+    }
+
+    @Test
+    void chunksAreOwnedOrderedAtomicAndRegeneratedWithoutDuplicates() throws Exception {
+        JsonNode auth = register();
+        String token = auth.path("accessToken").asText();
+        long caseId = json(call("POST", "/api/cases", token,
+                Map.of("clientId", createClient(token), "title", "Chunks test"), 201)).path("caseId").asLong();
+        long id = json(call("POST", "/api/cases/" + caseId + "/documents", token,
+                Map.of("fileName", "chunks.pdf", "fileType", "application/pdf", "category", "CONTRACT"), 201)).path("documentId").asLong();
+        String endpoint = "/api/documents/" + id + "/chunks";
+        String foreign = register().path("accessToken").asText();
+        call("POST", endpoint, null, null, 401);
+        call("GET", endpoint, null, null, 401);
+        call("POST", endpoint, foreign, null, 404);
+        call("GET", endpoint, foreign, null, 404);
+        call("POST", "/api/documents/9223372036854775807/chunks", token, null, 404);
+        call("GET", "/api/documents/9223372036854775807/chunks", token, null, 404);
+        call("POST", endpoint, token, null, 400);
+        assertThat(json(call("GET", endpoint, token, null, 200))).isEmpty();
+        jdbc.update("update documents set processing_status='PROCESSED',extracted_text=? where document_id=?", "Texto corto", id);
+        assertThat(json(call("POST", endpoint, token, null, 200)).path("chunksCreated").asInt()).isEqualTo(1);
+        String text = "Articulo 1. El contrato establece obligaciones para las partes.\r\n\r\n".repeat(180);
+        String normalized = pe.edu.upc.legalai.servicesimplements.CharacterChunker.normalize(text);
+        jdbc.update("update documents set extracted_text=? where document_id=?", text, id);
+        int count = json(call("POST", endpoint, token, null, 200)).path("chunksCreated").asInt();
+        assertThat(count).isGreaterThan(1);
+        var result = json(call("GET", endpoint, token, null, 200));
+        assertThat(result.size()).isEqualTo(count);
+        for (int i = 0; i < count; i++) {
+            JsonNode chunk = result.get(i);
+            int start = chunk.path("charStart").asInt(), end = chunk.path("charEnd").asInt();
+            assertThat(chunk.path("chunkIndex").asInt()).isEqualTo(i);
+            assertThat(chunk.path("documentId").asLong()).isEqualTo(id);
+            assertThat(start).isLessThan(end);
+            assertThat(chunk.path("content").asText()).isNotBlank().isEqualTo(normalized.substring(start,end).trim());
+            if (i > 0) assertThat(result.get(i-1).path("charEnd").asInt() - start).isEqualTo(300);
+        }
+        call("POST", endpoint, token, null, 200);
+        assertThat(jdbc.queryForObject("select count(*) from document_chunks where document_id=?", Long.class, id)).isEqualTo(count);
+        assertThat(jdbc.queryForObject("select processing_status from documents where document_id=?", String.class, id)).isEqualTo("PROCESSED");
+        var before = jdbc.queryForList("select chunk_id from document_chunks where document_id=? order by chunk_index", Long.class, id);
+        Long audits = jdbc.queryForObject("select count(*) from audit_logs where entity_id=? and action='GENERATE_DOCUMENT_CHUNKS'", Long.class,id);
+        jdbc.execute("alter table document_chunks add constraint test_chunk_insert_failure check (chunk_index < 0) not valid");
+        try {
+            call("POST", endpoint, token, null, 500);
+            assertThat(jdbc.queryForList("select chunk_id from document_chunks where document_id=? order by chunk_index", Long.class,id)).isEqualTo(before);
+        } finally { jdbc.execute("alter table document_chunks drop constraint test_chunk_insert_failure"); }
+        jdbc.execute("alter table audit_logs add constraint test_chunk_audit_failure check (action <> 'GENERATE_DOCUMENT_CHUNKS') not valid");
+        try {
+            call("POST", endpoint, token, null, 500);
+            assertThat(jdbc.queryForList("select chunk_id from document_chunks where document_id=? order by chunk_index", Long.class,id)).isEqualTo(before);
+            assertThat(jdbc.queryForObject("select count(*) from audit_logs where entity_id=? and action='GENERATE_DOCUMENT_CHUNKS'",Long.class,id)).isEqualTo(audits);
+        } finally { jdbc.execute("alter table audit_logs drop constraint test_chunk_audit_failure"); }
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:"+port+endpoint))
+                .header("Authorization", "Bearer "+token).POST(HttpRequest.BodyPublishers.noBody()).build();
+        var first = http.sendAsync(request,HttpResponse.BodyHandlers.ofString());
+        var second = http.sendAsync(request,HttpResponse.BodyHandlers.ofString());
+        assertThat(first.get().statusCode()).isEqualTo(200); assertThat(second.get().statusCode()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("select count(*) from document_chunks where document_id=?",Long.class,id)).isEqualTo(count);
+        JsonNode docs = json(call("GET", "/v3/api-docs",null,null,200));
+        assertThat(docs.path("paths").path("/api/documents/{documentId}/chunks").has("post")).isTrue();
+        assertThat(docs.path("paths").path("/api/documents/{documentId}/chunks").has("get")).isTrue();
+        call("DELETE", "/api/documents/"+id, token,null,204);
+        assertThat(jdbc.queryForObject("select count(*) from document_chunks where document_id=?",Long.class,id)).isZero();
     }
 
     private String signedToken(String algorithm, Map<String, Object> claims) throws Exception {

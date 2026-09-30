@@ -9,10 +9,6 @@ public class ModelMapperConfig {
 
     @Bean
     public ModelMapper modelMapper() {
-        ModelMapper modelMapper = new ModelMapper();
-        modelMapper.getConfiguration()
-                .setImplicitMappingEnabled(false);
-
-        return modelMapper;
+        return new ModelMapper();
     }
 }

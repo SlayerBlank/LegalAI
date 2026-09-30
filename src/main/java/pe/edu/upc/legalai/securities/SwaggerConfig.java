@@ -45,6 +45,9 @@ public class SwaggerConfig {
             ModelConverters.getInstance().read(ErrorResponse.class).forEach(openApi.getComponents()::addSchemas);
             openApi.getPaths().forEach((path, item) -> item.readOperationsMap().forEach((method, operation) -> {
                 errorResponse(operation, "500", "Error interno del servidor");
+                if (path.equals("/api/cases/{caseId}/documents/upload")) {
+                    errorResponse(operation, "413", "Limite multipart de archivo o solicitud excedido");
+                }
                 if (path.startsWith("/api/auth/")) {
                     operation.setSecurity(List.of());
                 } else {

@@ -1,6 +1,5 @@
 package pe.edu.upc.legalai.servicesimplements;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Cliente;
@@ -27,15 +26,13 @@ public class ExpedienteServiceImpl implements ExpedienteService {
     private final ClienteRepository clienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
-    private final ModelMapper modelMapper;
 
     public ExpedienteServiceImpl(ExpedienteRepository expedienteRepository, ClienteRepository clienteRepository,
-                                 UsuarioService usuarioService, AuditLogService auditLogService, ModelMapper modelMapper) {
+                                 UsuarioService usuarioService, AuditLogService auditLogService) {
         this.expedienteRepository = expedienteRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
-        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -136,7 +133,8 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         if (closedAt != null && closedAt.isBefore(openedAt)) {
             throw new BadRequestException("La fecha de cierre no puede ser anterior a la fecha de apertura");
         }
-        modelMapper.map(request, expediente);
+        expediente.setTitle(request.getTitle());
+        expediente.setDescription(request.getDescription());
         expediente.setStatus(status);
         expediente.setOpenedAt(openedAt);
         expediente.setClosedAt(closedAt);
