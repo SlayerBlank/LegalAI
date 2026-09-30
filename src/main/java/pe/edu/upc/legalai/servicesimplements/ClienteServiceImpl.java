@@ -1,6 +1,5 @@
 package pe.edu.upc.legalai.servicesimplements;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Cliente;
@@ -21,14 +20,12 @@ public class ClienteServiceImpl implements ClienteService {
     private final ClienteRepository clienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
-    private final ModelMapper modelMapper;
 
     public ClienteServiceImpl(ClienteRepository clienteRepository, UsuarioService usuarioService,
-                              AuditLogService auditLogService, ModelMapper modelMapper) {
+                              AuditLogService auditLogService) {
         this.clienteRepository = clienteRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
-        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -85,7 +82,12 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     private void applyRequest(Cliente cliente, ClienteRequestDTO request) {
-        modelMapper.map(request, cliente);
+        cliente.setClientType(request.getClientType());
+        cliente.setFullNameOrCompany(request.getFullNameOrCompany());
+        cliente.setDocumentNumber(request.getDocumentNumber());
+        cliente.setEmail(request.getEmail());
+        cliente.setPhone(request.getPhone());
+        cliente.setAddress(request.getAddress());
     }
 
     private ClienteResponseDTO toResponse(Cliente cliente) {

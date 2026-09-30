@@ -48,6 +48,13 @@ public class Documento {
     @Column(name = "size_bytes")
     private Long sizeBytes;
 
+    @Column(name = "extracted_text", columnDefinition = "TEXT")
+    private String extractedText;
+
+    public String getExtractedText() { return extractedText; }
+
+    public void setExtractedText(String extractedText) { this.extractedText = extractedText; }
+
     @Enumerated(EnumType.STRING)
     @Column(name = "processing_status", nullable = false, length = 30, columnDefinition = "varchar(30) default 'UPLOADED'")
     private EstadoProcesamiento processingStatus = EstadoProcesamiento.UPLOADED;

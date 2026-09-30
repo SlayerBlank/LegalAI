@@ -16,6 +16,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -24,6 +27,34 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ChunkGenerationException.class)
+    public ResponseEntity<ErrorResponse> handleChunkGeneration(ChunkGenerationException ex, HttpServletRequest request) {
+        LOGGER.error("Fallo al generar chunks en {}", request.getRequestURI(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DocumentProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleDocumentProcessing(DocumentProcessingException ex, HttpServletRequest request) {
+        LOGGER.error("Fallo al procesar documento en {}", request.getRequestURI(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleUploadTooLarge(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "La carga supera el tamano maximo permitido", request);
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidMultipart(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Solicitud multipart invalida: debe incluir el archivo PDF", request);
+    }
+
+    @ExceptionHandler(DocumentUploadException.class)
+    public ResponseEntity<ErrorResponse> handleDocumentUpload(DocumentUploadException ex, HttpServletRequest request) {
+        LOGGER.error("Fallo al guardar documento", ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+    }
 
     @ExceptionHandler(IAServiceException.class)
     public ResponseEntity<ErrorResponse> handleIAService(IAServiceException ex, HttpServletRequest request) {

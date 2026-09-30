@@ -4,8 +4,8 @@
 
 Backend tradicional con Java 21, Spring Boot, JPA, Spring Security, JWT, PostgreSQL y Swagger.
 Esta fase incluye `Rol`, `Usuario`, `Cliente`, `Expediente`, `Documento` y `AuditLog`.
-Los documentos contienen únicamente metadatos: el endpoint no recibe archivos binarios, no descarga
-`storageUrl` ni procesa el contenido. Las funcionalidades de IA descritas en la visión al final de
+Los documentos admiten carga real de PDF y conservan sus metadatos; no hay descarga ni procesamiento
+del contenido. `storageUrl` es un identificador interno relativo, no una URL publica. Las funcionalidades de IA descritas en la visión al final de
 este documento son futuras y no están implementadas.
 
 Se conserva el paquete `pe.edu.upc.legalai` y sus capas. Esta corrección de línea base no mueve DTOs:
@@ -28,17 +28,17 @@ Se retiró JJWT porque ninguna clase lo usa; la implementación JWT existente pe
 `config/` contiene configuraciones generales del proyecto e incluye `ModelMapperConfig.java`.
 `SwaggerConfig`, `WebSecurityConfig` y `CorsConfig` permanecen en `securities/`.
 
-ModelMapper se utiliza para conversiones simples entre Entities y DTOs, con una lista
-explicita de campos permitidos y mapeo implicito desactivado. Las relaciones entre entidades,
-IDs de propietarios, usuarios autenticados y campos sensibles deben asignarse explicitamente
-en `ServiceImpl`, nunca mediante mapeo automatico. Las reglas sobre estados y fechas
-permanecen en los servicios.
+El bean ModelMapper conserva exclusivamente `return new ModelMapper();`, sin TypeMap,
+addMappings ni configuraciones que generen proxies de DTOs. Los servicios de clientes,
+expedientes y documentos asignan los campos permitidos mediante setters. Las relaciones,
+IDs, ownership, estados y fechas se gestionan explicitamente en `ServiceImpl` o por JPA.
+ModelMapper queda disponible para conversiones simples donde el mapeo automatico sea seguro.
 
 ## Ejecución local
 
 Requisitos: JDK 21, `JAVA_HOME` configurado y la base PostgreSQL `LEGALAI` creada en localhost.
-Utilizar Java 21 también para las pruebas: en la verificación con JDK 26, ModelMapper 3.2.6 falló
-al crear proxies (`UnsupportedOperationException` en `JdkClassWriter`), aunque el código compilaba.
+La configuracion anterior de ModelMapper generaba proxies de DTOs y fallaba con JDK 26
+(`UnsupportedOperationException` en `JdkClassWriter`); se elimino esa configuracion.
 `application.properties` contiene la configuración general y activa e incluye el perfil `local`.
 `application-local.properties` contiene únicamente el usuario `postgres` y la contraseña local;
 reemplazar `[PASSWORD LOCAL]` por la contraseña de PostgreSQL.
@@ -73,6 +73,7 @@ sin añadir el prefijo `Bearer`. Registro y login son públicos; los demás endp
 | Expedientes | `POST, GET /api/cases`; `GET, PUT, DELETE /api/cases/{id}` |
 | Expedientes de un cliente | `GET /api/clients/{clientId}/cases` |
 | Documentos de un expediente | `POST, GET /api/cases/{caseId}/documents` |
+| Carga PDF | `POST /api/cases/{caseId}/documents/upload` (`multipart/form-data`) |
 | Documento | `GET, DELETE /api/documents/{id}` |
 
 Registro de ejemplo:
@@ -96,6 +97,55 @@ preceder a la apertura. Los errores de la API incluyen `status`, `message`, `tim
 La auditoría registra login y las operaciones solicitadas sobre clientes, expedientes y documentos.
 Comparte la transacción de la operación: si esta falla, tampoco se confirma el registro de auditoría.
 No hay endpoint público para consultar auditoría en esta fase.
+
+## Carga de PDF
+
+`POST /api/cases/{caseId}/documents/upload` requiere JWT y acepta `file` (archivo obligatorio)
+y `category` (texto opcional, hasta 80 caracteres). Verifica el expediente del usuario autenticado
+antes de leer/escribir el archivo desde el servicio. Tanto un expediente ajeno como uno inexistente
+devuelven 404. El contenedor puede recibir temporalmente el multipart antes de esa comprobacion.
+El endpoint JSON anterior se conserva para registrar metadata externa; no realiza cargas de archivos.
+
+| Variable | Valor predeterminado | Uso |
+| --- | --- | --- |
+| `LEGALAI_MAX_FILE_SIZE` | `10MB` (10,485,760 bytes) | Limite del servicio y de cada archivo multipart |
+| `LEGALAI_MAX_REQUEST_SIZE` | `12MB` | Limite de la solicitud multipart completa |
+| `LEGALAI_STORAGE_PATH` | `uploads` | Directorio de almacenamiento; relativo al directorio de ejecucion o absoluto |
+
+Al aumentar el limite del archivo, ajustar tambien el de la solicitud para permitir el overhead multipart.
+El servicio exige extension `.pdf`, MIME `application/pdf` y cabecera binaria `%PDF-1.x` o `%PDF-2.x`.
+Esta comprobacion basica no certifica la integridad completa del PDF y no usa parser, OCR ni extraccion.
+Se rechazan archivos vacios, nombres con rutas o caracteres de control y nombres de mas de 255 caracteres.
+Las validaciones del servicio devuelven 400; los limites multipart del contenedor devuelven 413.
+Ambos usan `ErrorResponse`, igual que los errores 401, 403, 404 y 500.
+
+Se crea el directorio si falta y se escribe con `CREATE_NEW` bajo un nombre `UUID.pdf`.
+La BD guarda solo ese identificador en `storageUrl`; el nombre original se conserva en `fileName`.
+El servicio asigna usuario, expediente, MIME, tamano y estado `UPLOADED`; no los toma de campos del formulario.
+El directorio `uploads/` esta excluido de Git y no se publica como recurso web.
+
+La escritura precede a la persistencia. Un error de escritura no crea metadata; un error de metadata
+o auditoria provoca rollback e intenta borrar el archivo, incluso si el error ocurre al confirmar
+la transaccion. Metadata y evento `UPLOAD_DOCUMENT` comparten transaccion. El evento identifica
+usuario, documentId, caseId y nombre original; nunca incluye contenido del PDF.
+Si falla la limpieza, se registra el identificador para conciliacion. Una caida del proceso entre
+escritura y commit puede dejar un archivo huerfano: filesystem y PostgreSQL no forman una transaccion
+atomica. Ante resultado de commit desconocido se conserva el archivo y se registra la necesidad de
+conciliacion para evitar borrar datos que pudieran haber sido confirmados.
+La eliminacion existente sigue eliminando metadata; la gestion de retencion de archivos queda pendiente.
+
+Para Railway, configurar posteriormente `LEGALAI_STORAGE_PATH=/data/uploads` sobre un volumen
+persistente montado. Esta tarea no crea volumen ni modifica el despliegue. Sin volumen, los archivos
+locales no tienen persistencia garantizada entre despliegues. No se requieren rutas especificas en codigo.
+
+Prueba manual en Swagger:
+
+1. Ejecutar `mvnw.cmd clean test` con Java 21 y la base exclusiva de pruebas configurada.
+2. Ejecutar `mvnw.cmd spring-boot:run` y abrir `http://localhost:8080/swagger-ui/index.html`.
+3. Autenticarse con **Authorize**, crear o elegir un expediente propio y abrir el endpoint de carga.
+4. Usar **Try it out**, completar `caseId`, seleccionar un PDF real con `file` y, opcionalmente, `category`.
+5. Ejecutar y comprobar 201, `processingStatus=UPLOADED`, `sizeBytes` igual al tamano real y `storageUrl=UUID.pdf`.
+6. Consultar el documento y verificar el archivo en `<LEGALAI_STORAGE_PATH>/<storageUrl>`.
 
 ## Pruebas
 

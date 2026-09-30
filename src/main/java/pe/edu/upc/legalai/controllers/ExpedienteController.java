@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
 import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
@@ -87,5 +90,21 @@ public class ExpedienteController {
     @GetMapping("/{caseId}/documents")
     public ResponseEntity<List<DocumentoResponseDTO>> listarDocumentos(@PathVariable Long caseId) {
         return ResponseEntity.ok(documentoService.listarPorExpediente(caseId));
+    }
+
+    @Operation(summary = "Cargar PDF", description = "Carga un PDF en un expediente propio. Limite configurable: 10 MB por defecto. No procesa el contenido.")
+    @ApiResponse(responseCode = "201", description = "PDF guardado y documento creado")
+    @ApiResponse(responseCode = "400", description = "Archivo, nombre o categoria invalidos")
+    @ApiResponse(responseCode = "401", description = "JWT ausente o invalido")
+    @ApiResponse(responseCode = "403", description = "Acceso denegado")
+    @ApiResponse(responseCode = "404", description = "Expediente inexistente o ajeno")
+    @ApiResponse(responseCode = "413", description = "Limite multipart excedido")
+    @ApiResponse(responseCode = "500", description = "Error de almacenamiento o persistencia")
+    @PostMapping(value = "/{caseId}/documents/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DocumentoResponseDTO> subirArchivo(
+            @PathVariable Long caseId,
+            @RequestPart("file") MultipartFile file,
+            @RequestPart(value = "category", required = false) String category) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(documentoService.subirArchivo(caseId, file, category));
     }
 }
