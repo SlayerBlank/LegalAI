@@ -4,12 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.modelmapper.ModelMapper;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pe.edu.upc.legalai.controllers.SummariesController;
 import pe.edu.upc.legalai.entities.Summaries;
-import pe.edu.upc.legalai.servicesinterfaces.SummariesService;
+import pe.edu.upc.legalai.servicesinterfaces.ISummariesService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,15 +22,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class SummariesControllerTest {
 
-    private SummariesService service;
+    private ISummariesService service;
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        service = mock(SummariesService.class);
-        SummariesController controller = new SummariesController();
-        ReflectionTestUtils.setField(controller, "sS", service);
-        ReflectionTestUtils.setField(controller, "modelMapper", new ModelMapper());
+        service = mock(ISummariesService.class);
+        SummariesController controller = new SummariesController(service, new ModelMapper());
         mvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 

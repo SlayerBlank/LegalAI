@@ -13,7 +13,7 @@ import org.springframework.util.unit.DataSize;
 import pe.edu.upc.legalai.entities.*;
 import pe.edu.upc.legalai.exceptions.*;
 import pe.edu.upc.legalai.repositories.*;
-import pe.edu.upc.legalai.servicesimplements.DocumentoServiceImpl;
+import pe.edu.upc.legalai.servicesimplements.DocumentoServiceImplement;
 import pe.edu.upc.legalai.servicesinterfaces.*;
 
 import java.io.IOException;
@@ -28,13 +28,13 @@ import static org.mockito.Mockito.*;
 
 class DocumentoUploadTest {
     @TempDir Path temp;
-    private final DocumentoRepository documents = mock(DocumentoRepository.class);
-    private final ExpedienteRepository cases = mock(ExpedienteRepository.class);
-    private final UsuarioService users = mock(UsuarioService.class);
+    private final IDocumentoRepository documents = mock(IDocumentoRepository.class);
+    private final IExpedienteRepository cases = mock(IExpedienteRepository.class);
+    private final IUsuarioService users = mock(IUsuarioService.class);
     private final AuditLogService audit = mock(AuditLogService.class);
     private final Usuario user = new Usuario();
     private final Expediente expediente = new Expediente();
-    private DocumentoServiceImpl service;
+    private DocumentoServiceImplement service;
     private static final byte[] PDF = "%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n".getBytes(StandardCharsets.US_ASCII);
 
     @BeforeEach
@@ -52,8 +52,8 @@ class DocumentoUploadTest {
         service = createService(temp.resolve("uploads"));
     }
 
-    private DocumentoServiceImpl createService(Path root) {
-        return new DocumentoServiceImpl(documents, cases, users, audit, root.toString(), DataSize.ofBytes(1024));
+    private DocumentoServiceImplement createService(Path root) {
+        return new DocumentoServiceImplement(documents, cases, users, audit, root.toString(), DataSize.ofBytes(1024));
     }
 
     private MockMultipartFile pdf() { return file("contrato.pdf", "application/pdf", PDF); }

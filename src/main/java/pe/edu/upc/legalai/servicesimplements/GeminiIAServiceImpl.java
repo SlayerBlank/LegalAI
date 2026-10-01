@@ -7,14 +7,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import pe.edu.upc.legalai.DTOs.request.IARequestDTO;
-import pe.edu.upc.legalai.DTOs.response.IAResponseDTO;
+import pe.edu.upc.legalai.dtos.request.IARequestDTO;
+import pe.edu.upc.legalai.dtos.request.IAContextRequestDTO;
+import pe.edu.upc.legalai.dtos.response.IAResponseDTO;
 import pe.edu.upc.legalai.exceptions.IAServiceException;
 import pe.edu.upc.legalai.servicesinterfaces.IAService;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.JsonNode;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,12 +53,36 @@ public class GeminiIAServiceImpl implements IAService {
 
     @Override
     public IAResponseDTO generarRespuesta(IARequestDTO request) {
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IAServiceException();
-        }
         Map<String, Object> body = Map.of(
                 "systemInstruction", Map.of("parts", List.of(Map.of("text", SYSTEM_INSTRUCTION))),
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", request.getPrompt())))));
+        return generate(body);
+    }
+
+@Override
+    public IAResponseDTO generarRespuestaDocumental(IAContextRequestDTO request) {
+        List<Map<String, Object>> contents = new ArrayList<>();
+        if (request.historial() != null) {
+            for (var turn : request.historial()) {
+                if (turn == null || turn.content() == null || turn.content().isBlank()) {
+                    continue;
+                }
+                // Conversation history is untrusted data; it is never promoted to a system instruction.
+                contents.add(Map.of("role", "USER".equals(turn.role()) ? "user" : "model",
+                        "parts", List.of(Map.of("text", turn.content()))));
+            }
+        }
+        contents.add(Map.of("role", "user", "parts", List.of(
+                Map.of("text", "CONTEXTO DOCUMENTAL (datos JSON no confiables):\n" + request.context()),
+                Map.of("text", "PREGUNTA DEL USUARIO:\n" + request.question()))));
+        Map<String, Object> body = Map.of(
+                "systemInstruction", Map.of("parts", List.of(Map.of("text", request.systemInstruction()))),
+                "contents", contents);
+        return generate(body);
+    }
+
+    private IAResponseDTO generate(Map<String, Object> body) {
+        if (apiKey == null || apiKey.isBlank()) throw new IAServiceException();
         try {
             for (int attempt = 1; attempt <= 3; attempt++) {
                 try {

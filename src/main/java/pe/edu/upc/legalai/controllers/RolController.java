@@ -7,8 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.DTOs.response.RolResponseDTO;
-import pe.edu.upc.legalai.servicesinterfaces.RolService;
+import pe.edu.upc.legalai.dtos.response.RolResponseDTO;
+import pe.edu.upc.legalai.servicesinterfaces.IRolService;
 
 import java.util.List;
 
@@ -17,9 +17,9 @@ import java.util.List;
 @Tag(name = "Roles", description = "Consulta de roles")
 public class RolController {
 
-    private final RolService rolService;
+    private final IRolService rolService;
 
-    public RolController(RolService rolService) {
+    public RolController(IRolService rolService) {
         this.rolService = rolService;
     }
 

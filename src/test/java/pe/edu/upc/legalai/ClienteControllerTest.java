@@ -4,15 +4,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.ClienteResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.controllers.ClienteController;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.TipoCliente;
 import pe.edu.upc.legalai.exceptions.GlobalExceptionHandler;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.servicesinterfaces.ClienteService;
-import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
+import pe.edu.upc.legalai.servicesinterfaces.IClienteService;
+import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,14 +24,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ClienteControllerTest {
 
-    private ClienteService clienteService;
-    private ExpedienteService expedienteService;
+    private IClienteService clienteService;
+    private IExpedienteService expedienteService;
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        clienteService = mock(ClienteService.class);
-        expedienteService = mock(ExpedienteService.class);
+        clienteService = mock(IClienteService.class);
+        expedienteService = mock(IExpedienteService.class);
         mvc = MockMvcBuilders.standaloneSetup(new ClienteController(clienteService, expedienteService))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
     }

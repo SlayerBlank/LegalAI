@@ -7,17 +7,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.DTOs.response.UsuarioResponseDTO;
-import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
+import pe.edu.upc.legalai.dtos.response.UsuarioResponseDTO;
+import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Usuarios", description = "Perfil del usuario autenticado")
 public class UsuarioController {
 
-    private final UsuarioService usuarioService;
+    private final IUsuarioService usuarioService;
 
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(IUsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
 

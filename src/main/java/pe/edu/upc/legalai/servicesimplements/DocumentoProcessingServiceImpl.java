@@ -11,13 +11,13 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoTextResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoTextResponseDTO;
 import pe.edu.upc.legalai.entities.Documento;
 import pe.edu.upc.legalai.entities.EstadoProcesamiento;
 import pe.edu.upc.legalai.exceptions.*;
-import pe.edu.upc.legalai.repositories.DocumentoRepository;
-import pe.edu.upc.legalai.repositories.DocumentChunkRepository;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
+import pe.edu.upc.legalai.repositories.IDocumentChunkRepository;
 import pe.edu.upc.legalai.servicesinterfaces.*;
 
 import java.io.IOException;
@@ -27,17 +27,17 @@ import java.nio.file.Path;
 @Service
 public class DocumentoProcessingServiceImpl implements DocumentoProcessingService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentoProcessingServiceImpl.class);
-    private final DocumentoRepository documents;
-    private final DocumentChunkRepository chunks;
-    private final UsuarioService users;
+    private final IDocumentoRepository documents;
+    private final IDocumentChunkRepository chunks;
+    private final IUsuarioService users;
     private final AuditLogService audit;
-    private final DocumentoService metadata;
+    private final IDocumentoService metadata;
     private final TransactionTemplate transaction;
     private final Path storageRoot;
 
-    public DocumentoProcessingServiceImpl(DocumentoRepository documents, UsuarioService users,
-            AuditLogService audit, DocumentoService metadata, PlatformTransactionManager manager,
-            @Value("${legalai.storage.path}") String storagePath, DocumentChunkRepository chunks) {
+    public DocumentoProcessingServiceImpl(IDocumentoRepository documents, IUsuarioService users,
+            AuditLogService audit, IDocumentoService metadata, PlatformTransactionManager manager,
+            @Value("${legalai.storage.path}") String storagePath, IDocumentChunkRepository chunks) {
         this.documents = documents;
         this.chunks = chunks;
         this.users = users;

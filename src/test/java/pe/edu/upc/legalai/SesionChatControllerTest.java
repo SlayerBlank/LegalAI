@@ -4,11 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.dtos.response.SesionChatResponseDTO;
 import pe.edu.upc.legalai.controllers.SesionChatController;
 import pe.edu.upc.legalai.exceptions.GlobalExceptionHandler;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
+import pe.edu.upc.legalai.servicesinterfaces.ISesionChatService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,12 +19,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class SesionChatControllerTest {
 
-    private SesionChatService service;
+    private ISesionChatService service;
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        service = mock(SesionChatService.class);
+        service = mock(ISesionChatService.class);
         mvc = MockMvcBuilders.standaloneSetup(new SesionChatController(service))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
     }

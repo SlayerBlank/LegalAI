@@ -24,8 +24,8 @@ class DocumentoUploadWebTest {
     @Autowired org.springframework.web.context.WebApplicationContext context;
     @Autowired org.springframework.security.web.FilterChainProxy security;
     @Autowired JwtTokenUtil tokens;
-    @MockitoBean DocumentoService documents;
-    @MockitoBean ExpedienteService cases;
+    @MockitoBean IDocumentoService documents;
+    @MockitoBean IExpedienteService cases;
     @MockitoBean UsuarioDetailsService users;
     private static final String URL = "/api/cases/12/documents/upload";
 

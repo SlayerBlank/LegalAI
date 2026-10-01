@@ -5,15 +5,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.controllers.ExpedienteController;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.EstadoProcesamiento;
 import pe.edu.upc.legalai.exceptions.GlobalExceptionHandler;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
-import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
+import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
+import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,14 +25,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ExpedienteControllerTest {
 
-    private ExpedienteService expedienteService;
-    private DocumentoService documentoService;
+    private IExpedienteService expedienteService;
+    private IDocumentoService documentoService;
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        expedienteService = mock(ExpedienteService.class);
-        documentoService = mock(DocumentoService.class);
+        expedienteService = mock(IExpedienteService.class);
+        documentoService = mock(IDocumentoService.class);
         mvc = MockMvcBuilders.standaloneSetup(new ExpedienteController(expedienteService, documentoService))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
     }

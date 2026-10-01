@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoTextResponseDTO;
-import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoTextResponseDTO;
+import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoProcessingService;
 
 @RestController
@@ -20,10 +20,10 @@ import pe.edu.upc.legalai.servicesinterfaces.DocumentoProcessingService;
 @Tag(name = "Documentos", description = "Consulta y eliminacion de documentos propios")
 public class DocumentoController {
 
-    private final DocumentoService documentoService;
+    private final IDocumentoService documentoService;
     private final DocumentoProcessingService processingService;
 
-    public DocumentoController(DocumentoService documentoService,
+    public DocumentoController(IDocumentoService documentoService,
             DocumentoProcessingService processingService) {
         this.documentoService = documentoService;
         this.processingService = processingService;

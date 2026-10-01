@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.AuditLogResponseDTO;
+import pe.edu.upc.legalai.dtos.response.AuditLogResponseDTO;
 import pe.edu.upc.legalai.controllers.AuditLogController;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.GlobalExceptionHandler;

@@ -2,17 +2,17 @@ package pe.edu.upc.legalai;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
-import pe.edu.upc.legalai.repositories.ClienteRepository;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.servicesimplements.ExpedienteServiceImpl;
+import pe.edu.upc.legalai.repositories.IClienteRepository;
+import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.servicesimplements.ExpedienteServiceImplement;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
-import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
+import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -24,22 +24,22 @@ import static org.mockito.Mockito.*;
 
 class ExpedienteServiceImplTest {
 
-    private ExpedienteRepository expedienteRepository;
-    private ClienteRepository clienteRepository;
-    private UsuarioService usuarioService;
+    private IExpedienteRepository expedienteRepository;
+    private IClienteRepository clienteRepository;
+    private IUsuarioService usuarioService;
     private AuditLogService auditLogService;
-    private ExpedienteServiceImpl service;
+    private ExpedienteServiceImplement service;
 
     private Usuario usuario;
     private Cliente cliente;
 
     @BeforeEach
     void setup() {
-        expedienteRepository = mock(ExpedienteRepository.class);
-        clienteRepository = mock(ClienteRepository.class);
-        usuarioService = mock(UsuarioService.class);
+        expedienteRepository = mock(IExpedienteRepository.class);
+        clienteRepository = mock(IClienteRepository.class);
+        usuarioService = mock(IUsuarioService.class);
         auditLogService = mock(AuditLogService.class);
-        service = new ExpedienteServiceImpl(expedienteRepository, clienteRepository, usuarioService, auditLogService);
+        service = new ExpedienteServiceImplement(expedienteRepository, clienteRepository, usuarioService, auditLogService);
 
         usuario = new Usuario();
         usuario.setUserId(1L);

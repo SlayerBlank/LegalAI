@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 @Table(name = "document_chunks", uniqueConstraints =
         @UniqueConstraint(name = "uk_document_chunks_document_index", columnNames = {"document_id", "chunk_index"}))
 public class DocumentChunk {
+    // embedding vector(N) and embedding_model are managed by ChunkEmbeddingRepository.
+    // Deliberately excluded from ORM mapping: Hibernate ddl-auto cannot install pgvector.
+    // See database/migrations/20261002_chunk_embeddings.sql (default N = 768).
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "chunk_id")

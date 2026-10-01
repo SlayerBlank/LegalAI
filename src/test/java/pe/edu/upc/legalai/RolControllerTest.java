@@ -4,9 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.RolResponseDTO;
+import pe.edu.upc.legalai.dtos.response.RolResponseDTO;
 import pe.edu.upc.legalai.controllers.RolController;
-import pe.edu.upc.legalai.servicesinterfaces.RolService;
+import pe.edu.upc.legalai.servicesinterfaces.IRolService;
 
 import java.util.List;
 
@@ -18,12 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class RolControllerTest {
 
-    private RolService service;
+    private IRolService service;
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        service = mock(RolService.class);
+        service = mock(IRolService.class);
         mvc = MockMvcBuilders.standaloneSetup(new RolController(service)).build();
     }
 

@@ -30,6 +30,395 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class LegalAiApplicationTests {
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.edu.upc.legalai.servicesinterfaces.EmbeddingService embeddings;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private pe.edu.upc.legalai.servicesinterfaces.IAService ia;
+
+    @Test
+    void ragUsesScopedRetrievalAndAuditsSuccessAndFailureWithoutConversation() throws Exception {
+        JsonNode auth = register();
+        String token = auth.path("accessToken").asText();
+        long userId = auth.path("user").path("userId").asLong();
+        String foreign = register().path("accessToken").asText();
+        long caseId = json(call("POST", "/api/cases", token,
+                Map.of("clientId",createClient(token),"title","RAG case"),201)).path("caseId").asLong();
+        long otherCase = json(call("POST", "/api/cases", token,
+                Map.of("clientId",createClient(token),"title","Excluded RAG case"),201)).path("caseId").asLong();
+        long foreignCase = json(call("POST", "/api/cases", foreign,
+                Map.of("clientId",createClient(foreign),"title","Foreign RAG case"),201)).path("caseId").asLong();
+        long doc = embeddingDocument(token,caseId);
+        long second = embeddingDocument(token,caseId);
+        long excluded = embeddingDocument(token,otherCase);
+        long foreignDoc = embeddingDocument(foreign,foreignCase);
+        var question = Map.of("question","private-question","topK",5);
+        String endpoint = "/api/documents/"+doc+"/ask";
+        for (String path : new String[]{endpoint,"/api/cases/"+caseId+"/ask"}) {
+            call("POST",path,null,question,401);
+            call("POST",path,"invalid",question,401);
+            call("POST",path,foreign,question,404);
+        }
+        call("POST","/api/documents/9223372036854775807/ask",token,question,404);
+        call("POST","/api/cases/9223372036854775807/ask",token,question,404);
+        call("POST","/api/documents/"+foreignDoc+"/ask",token,question,404);
+        org.mockito.Mockito.verifyNoInteractions(ia,embeddings);
+        float[] vector = new float[768]; vector[0]=1;
+        org.mockito.Mockito.when(embeddings.generarEmbeddingConsulta(org.mockito.ArgumentMatchers.anyString())).thenReturn(vector);
+        JsonNode empty = json(call("POST",endpoint,token,question,200));
+        assertThat(empty.path("retrievedChunks").asInt()).isZero(); // No chunks.
+        for (long id : new long[]{doc,second,excluded,foreignDoc}) jdbc.update("""
+                insert into document_chunks(document_id,chunk_index,content,char_start,char_end,created_at)
+                values (?,0,?,0,30,current_timestamp)
+                """,id,"private-source-for-document-"+id);
+        assertThat(json(call("POST",endpoint,token,question,200)).path("sources").size()).isZero(); // No embeddings.
+        org.mockito.Mockito.verifyNoInteractions(ia);
+        for (long id : new long[]{doc,second,excluded,foreignDoc}) jdbc.update("""
+                update document_chunks set embedding=cast(? as vector),embedding_model='gemini-embedding-001' where document_id=?
+                """,java.util.Arrays.toString(vector),id);
+        var answer = new pe.edu.upc.legalai.dtos.response.IAResponseDTO();
+        answer.setAnswer("private-answer [F1]"); answer.setProvider("gemini"); answer.setModel("mock-model");
+        org.mockito.Mockito.when(ia.generarRespuestaDocumental(org.mockito.ArgumentMatchers.any())).thenReturn(answer);
+        JsonNode result = json(call("POST",endpoint,token,question,200));
+        assertThat(result.path("model").asText()).isEqualTo("mock-model");
+        assertThat(result.path("sourcesType").asText()).isEqualTo("CONSULTED_FRAGMENTS");
+        assertThat(result.path("sources").size()).isEqualTo(1);
+        assertThat(result.path("sources").get(0).path("documentId").asLong()).isEqualTo(doc);
+        assertThat(result.path("sources").get(0).path("documentName").asText()).isEqualTo("retrieval.pdf");
+        var sent = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.dtos.request.IAContextRequestDTO.class);
+        org.mockito.Mockito.verify(ia).generarRespuestaDocumental(sent.capture());
+        assertThat(objectMapper.readTree(sent.getValue().context()).size()).isEqualTo(1);
+        org.mockito.Mockito.clearInvocations(ia,embeddings);
+        result = json(call("POST","/api/cases/"+caseId+"/ask",token,question,200));
+        assertThat(result.path("sources").size()).isEqualTo(2);
+        for (JsonNode source : result.path("sources")) assertThat(source.path("documentId").asLong()).isIn(doc,second);
+        org.mockito.Mockito.verify(ia).generarRespuestaDocumental(sent.capture());
+        for (JsonNode source : objectMapper.readTree(sent.getValue().context()))
+            assertThat(source.path("documentId").asLong()).isIn(doc,second);
+        org.mockito.Mockito.verify(embeddings).generarEmbeddingConsulta("private-question");
+        org.mockito.Mockito.verify(embeddings,org.mockito.Mockito.never()).generarEmbeddings(org.mockito.ArgumentMatchers.anyList());
+        org.mockito.Mockito.verify(embeddings,org.mockito.Mockito.never()).generarEmbedding(org.mockito.ArgumentMatchers.anyString());
+        org.mockito.Mockito.doThrow(new pe.edu.upc.legalai.exceptions.IAServiceException()).when(ia)
+                .generarRespuestaDocumental(org.mockito.ArgumentMatchers.any());
+        call("POST",endpoint,token,question,503);
+        var logs = jdbc.queryForList("select details from audit_logs where user_id=? and action='RAG_QUERY' order by log_id",String.class,userId);
+        assertThat(logs).anyMatch(s -> s.contains("result=SUCCESS")).anyMatch(s -> s.contains("result=FAILED"));
+        assertThat(logs).allMatch(s -> !s.contains("private-question") && !s.contains("private-answer") && !s.contains("private-source"));
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where user_id=? and action='RAG_QUERY' and created_at is null",Long.class,userId)).isZero();
+        var api=json(call("GET","/v3/api-docs",null,null,200));
+        for (String path : new String[]{"/api/documents/{documentId}/ask","/api/cases/{caseId}/ask","/api/ai/test",
+                "/api/documents/{documentId}/search","/api/documents/{documentId}/embeddings"})
+            assertThat(api.path("paths").path(path).has("post")).isTrue();
+        org.mockito.Mockito.when(ia.generarRespuesta(org.mockito.ArgumentMatchers.any())).thenReturn(answer);
+        assertThat(json(call("POST","/api/ai/test",token,Map.of("prompt","independent prompt"),200)).path("answer").asText()).isEqualTo("private-answer [F1]");
+    }
+
+    @Test
+    void embeddingsAreAtomicOwnedAndSearchIsOrderedAndScoped() throws Exception {
+        String token = register().path("accessToken").asText();
+        String foreign = register().path("accessToken").asText();
+        long caseId = json(call("POST", "/api/cases", token,
+                Map.of("clientId", createClient(token), "title", "Retrieval test"), 201)).path("caseId").asLong();
+        long otherCase = json(call("POST", "/api/cases", token,
+                Map.of("clientId", createClient(token), "title", "Excluded case"), 201)).path("caseId").asLong();
+        long doc = embeddingDocument(token, caseId);
+        long secondDoc = embeddingDocument(token, caseId);
+        long excludedDoc = embeddingDocument(token, otherCase);
+        String base = "/api/documents/" + doc;
+        var query = Map.of("query", "garantia", "topK", 5);
+        for (String path : new String[]{base + "/embeddings", base + "/search", "/api/cases/" + caseId + "/search"}) {
+            call("POST", path, null, query, 401);
+            call("POST", path, "invalid", query, 401);
+            call("POST", path, foreign, query, 404);
+        }
+        call("POST", "/api/documents/9223372036854775807/embeddings", token, null, 404);
+        call("POST", "/api/documents/9223372036854775807/search", token, query, 404);
+        call("POST", "/api/cases/9223372036854775807/search", token, query, 404);
+        call("POST", base + "/embeddings", token, null, 400);
+        org.mockito.Mockito.verifyNoInteractions(embeddings);
+        for (long id : new long[]{doc, secondDoc, excludedDoc}) {
+            for (int index = 0; index < 2; index++) jdbc.update("""
+                    insert into document_chunks(document_id,chunk_index,content,char_start,char_end,created_at)
+                    values (?,?,?,0,10,current_timestamp)
+                    """, id, index, "chunk-" + index);
+        }
+        float[] near = new float[768]; near[0] = 1;
+        float[] far = new float[768]; far[1] = 1;
+        org.mockito.Mockito.when(embeddings.generarEmbeddingConsulta(org.mockito.ArgumentMatchers.anyString())).thenReturn(near);
+        org.mockito.Mockito.when(embeddings.generarEmbeddings(org.mockito.ArgumentMatchers.anyList()))
+                .thenAnswer(inv -> java.util.List.of(((java.util.List<?>)inv.getArgument(0)).getFirst().equals("chunk-0") ? far : near));
+        for (long id : new long[]{doc, secondDoc, excludedDoc}) {
+            JsonNode result = json(call("POST", "/api/documents/" + id + "/embeddings", token, null, 200));
+            assertThat(result.path("embeddingsGenerated").asInt()).isEqualTo(2);
+        }
+        org.mockito.Mockito.clearInvocations(embeddings);
+        JsonNode skipped = json(call("POST", base + "/embeddings", token, null, 200));
+        assertThat(skipped.path("chunksProcessed").asInt()).isEqualTo(2);
+        assertThat(skipped.path("embeddingsGenerated").asInt()).isZero();
+        org.mockito.Mockito.verifyNoInteractions(embeddings);
+        assertThat(json(call("POST", base + "/embeddings?force=true", token, null, 200))
+                .path("embeddingsGenerated").asInt()).isEqualTo(2);
+        JsonNode results = json(call("POST", base + "/search", token, query, 200));
+        assertThat(results.size()).isEqualTo(2);
+        assertThat(results.get(0).path("chunkIndex").asInt()).isEqualTo(1);
+        assertThat(results.get(0).path("distance").asDouble()).isCloseTo(0, org.assertj.core.data.Offset.offset(0.00001));
+        assertThat(results.get(1).path("distance").asDouble()).isCloseTo(1, org.assertj.core.data.Offset.offset(0.00001));
+        for (JsonNode r : results) assertThat(r.path("documentId").asLong()).isEqualTo(doc);
+        results = json(call("POST", "/api/cases/" + caseId + "/search", token, query, 200));
+        assertThat(results.size()).isEqualTo(4);
+        for (JsonNode r : results) assertThat(r.path("documentId").asLong()).isIn(doc, secondDoc);
+        assertThat(json(call("POST", "/api/cases/" + caseId + "/search", token, Map.of("query","q","topK",1),200)).size()).isEqualTo(1);
+
+        var nativeRepository = new pe.edu.upc.legalai.repositories.ChunkEmbeddingRepository(jdbc,
+                new pe.edu.upc.legalai.configs.EmbeddingSettings("gemini-embedding-001",768,1));
+        assertThat(nativeRepository.searchDocument(doc, -1L, near, 5)).isEmpty();
+        assertThat(nativeRepository.searchCase(caseId, -1L, near, 5)).isEmpty();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new pe.edu.upc.legalai.repositories.ChunkEmbeddingRepository(jdbc,
+                new pe.edu.upc.legalai.configs.EmbeddingSettings("gemini-embedding-001",1536,1)).validateSchema())
+                .isInstanceOf(pe.edu.upc.legalai.exceptions.EmbeddingException.class);
+        jdbc.update("update document_chunks set embedding=null, embedding_model=null where document_id=? and chunk_index=0",doc);
+        org.mockito.Mockito.clearInvocations(embeddings);
+        assertThat(json(call("POST", base + "/embeddings", token, null, 200)).path("embeddingsGenerated").asInt()).isEqualTo(1);
+        org.mockito.Mockito.verify(embeddings,org.mockito.Mockito.times(1)).generarEmbeddings(java.util.List.of("chunk-0"));
+
+        var before = jdbc.queryForList("select embedding::text from document_chunks where document_id=? order by chunk_index", String.class, doc);
+        org.mockito.Mockito.doReturn(java.util.List.of(near))
+                .doThrow(new pe.edu.upc.legalai.exceptions.EmbeddingException("simulated 429"))
+                .when(embeddings).generarEmbeddings(org.mockito.ArgumentMatchers.anyList());
+        assertThat(json(call("POST", base + "/embeddings?force=true", token, null, 503)).path("message").asText())
+                .contains("chunks afectados", "Operacion revertida");
+        assertThat(jdbc.queryForList("select embedding::text from document_chunks where document_id=? order by chunk_index", String.class, doc)).isEqualTo(before);
+        org.mockito.Mockito.reset(embeddings);
+        org.mockito.Mockito.when(embeddings.generarEmbeddings(org.mockito.ArgumentMatchers.anyList())).thenReturn(java.util.List.of(new float[]{1,2}));
+        call("POST", base + "/embeddings?force=true", token, null, 503);
+        assertThat(jdbc.queryForList("select embedding::text from document_chunks where document_id=? order by chunk_index", String.class, doc)).isEqualTo(before);
+        org.mockito.Mockito.when(embeddings.generarEmbeddingConsulta(org.mockito.ArgumentMatchers.anyString())).thenReturn(new float[]{1,2});
+        call("POST", base + "/search", token, query, 503);
+        JsonNode api = json(call("GET", "/v3/api-docs", null, null, 200));
+        for (String path : new String[]{"/api/documents/{documentId}/embeddings", "/api/documents/{documentId}/search", "/api/cases/{caseId}/search"})
+            assertThat(api.path("paths").path(path).has("post")).isTrue();
+    }
+
+    @Test
+    void chatSessionsAreScopedOrderedIdempotentAndAudited() throws Exception {
+        JsonNode auth = register();
+        String token = auth.path("accessToken").asText();
+        long userId = auth.path("user").path("userId").asLong();
+        String foreign = register().path("accessToken").asText();
+        long caseId = json(call("POST", "/api/cases", token,
+                Map.of("clientId", createClient(token), "title", "Chat case"), 201)).path("caseId").asLong();
+        long otherCase = json(call("POST", "/api/cases", token,
+                Map.of("clientId", createClient(token), "title", "Other chat case"), 201)).path("caseId").asLong();
+        long documentId = chatDocument(token, caseId, "chat.pdf");
+        long otherDocumentId = chatDocument(token, otherCase, "other.pdf");
+        long foreignCase = json(call("POST", "/api/cases", foreign,
+                Map.of("clientId", createClient(foreign), "title", "Foreign chat case"), 201)).path("caseId").asLong();
+        long foreignDocumentId = chatDocument(foreign, foreignCase, "foreign.pdf");
+
+        Map<String, Object> creation = Map.of("caseId", caseId, "title", "Conversacion inicial");
+        call("POST", "/api/chat/sessions", null, creation, 401);
+        call("POST", "/api/chat/sessions", "invalid", creation, 401);
+        call("POST", "/api/chat/sessions", token, Map.of("caseId", caseId, "ownerUserId", userId), 400);
+        call("POST", "/api/chat/sessions", token, Map.of("caseId", caseId, "documentId", foreignDocumentId), 404);
+        call("POST", "/api/chat/sessions", token, Map.of("caseId", caseId, "documentId", otherDocumentId), 404);
+        call("POST", "/api/chat/sessions", token, Map.of("caseId", Long.MAX_VALUE), 404);
+        org.mockito.Mockito.verifyNoInteractions(ia, embeddings);
+
+        JsonNode created = json(call("POST", "/api/chat/sessions", token, creation, 201));
+        long sessionId = created.path("sessionId").asLong();
+        assertThat(created.path("caseId").asLong()).isEqualTo(caseId);
+        assertThat(created.path("documentId").isNull()).isTrue();
+        assertThat(created.path("messageCount").asLong()).isZero();
+        assertThat(jdbc.queryForObject("select user_id from chat_sessions where session_id=?", Long.class, sessionId))
+                .isEqualTo(userId);
+        assertThat(jdbc.queryForObject("select document_id from chat_sessions where session_id=?", Long.class, sessionId))
+                .isNull();
+        long documentSession = json(call("POST", "/api/chat/sessions", token,
+                Map.of("caseId", caseId, "documentId", documentId, "title", "Solo documento"), 201))
+                .path("sessionId").asLong();
+        JsonNode documentSessionData = json(call("GET", "/api/chat/sessions/" + documentSession, token, null, 200));
+        assertThat(documentSessionData.path("documentId").asLong()).isEqualTo(documentId);
+        assertThat(documentSessionData.path("documentScopeRequired").asBoolean()).isTrue();
+
+        call("GET", "/api/chat/sessions/" + sessionId, foreign, null, 404);
+        call("GET", "/api/chat/sessions/" + sessionId + "/messages", foreign, null, 404);
+        call("POST", "/api/chat/sessions/" + sessionId + "/messages", foreign, Map.of("content", "hola"), 404);
+        call("PATCH", "/api/chat/sessions/" + sessionId, foreign, Map.of("title", "ajeno"), 404);
+        call("DELETE", "/api/chat/sessions/" + sessionId, foreign, null, 404);
+        call("GET", "/api/chat/sessions/" + Long.MAX_VALUE, token, null, 404);
+        assertThat(json(call("GET", "/api/chat/sessions", foreign, null, 200))).isEmpty();
+        call("GET", "/api/chat/sessions", null, null, 401);
+        call("GET", "/api/chat/sessions?caseId=" + foreignCase, token, null, 404);
+        assertThat(json(call("GET", "/api/chat/sessions?caseId=" + caseId, token, null, 200))).hasSize(2);
+
+        float[] vector = new float[768];
+        vector[0] = 1;
+        org.mockito.Mockito.when(embeddings.generarEmbeddingConsulta(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(vector);
+        for (long id : new long[]{documentId, otherDocumentId}) {
+            jdbc.update("insert into document_chunks(document_id,chunk_index,content,char_start,char_end,created_at)"
+                    + " values (?,0,?,0,40,current_timestamp)", id, "fuente privada del documento " + id);
+            jdbc.update("update document_chunks set embedding=cast(? as vector),embedding_model='gemini-embedding-001'"
+                    + " where document_id=?", java.util.Arrays.toString(vector), id);
+        }
+        var answer = new pe.edu.upc.legalai.dtos.response.IAResponseDTO();
+        answer.setAnswer("La potencia optica es 20 W [F1]");
+        answer.setProvider("gemini");
+        answer.setModel("mock-model");
+        org.mockito.Mockito.when(ia.generarRespuestaDocumental(org.mockito.ArgumentMatchers.any())).thenReturn(answer);
+
+        String endpoint = "/api/chat/sessions/" + sessionId + "/messages";
+        call("POST", endpoint, token, Map.of("content", " "), 400);
+        call("POST", endpoint, token, Map.of("content", "q", "clientMessageId", "x".repeat(65)), 400);
+        call("POST", endpoint, token, Map.of("content", "q", "role", "ASSISTANT"), 400);
+        JsonNode turn = json(call("POST", endpoint, token,
+                Map.of("content", "Cual es la potencia optica?", "clientMessageId", "turno-1"), 200));
+        assertThat(turn.path("sessionId").asLong()).isEqualTo(sessionId);
+        assertThat(turn.path("userMessage").path("role").asText()).isEqualTo("USER");
+        assertThat(turn.path("assistantMessage").path("role").asText()).isEqualTo("ASSISTANT");
+        assertThat(turn.path("assistantMessage").path("sources").size()).isEqualTo(1);
+        assertThat(turn.path("provider").asText()).isEqualTo("gemini");
+        assertThat(turn.path("model").asText()).isEqualTo("mock-model");
+        assertThat(turn.path("retrievedChunks").asInt()).isEqualTo(1);
+        assertThat(turn.path("sourcesType").asText()).isEqualTo("CONSULTED_FRAGMENTS");
+        assertThat(turn.path("sources").size()).isEqualTo(1);
+        assertThat(turn.path("sources").get(0).path("documentId").asLong()).isIn(documentId, otherDocumentId);
+
+        var rows = jdbc.queryForList("select message_id,sender_type,client_message_id,reply_to_message_id from chat_messages"
+                + " where session_id=? order by message_id", sessionId);
+        assertThat(rows).hasSize(2);
+        assertThat(rows.getFirst().get("sender_type")).isEqualTo("USER");
+        assertThat(rows.getFirst().get("client_message_id")).isEqualTo("turno-1");
+        assertThat(rows.getLast().get("sender_type")).isEqualTo("ASSISTANT");
+        assertThat(rows.getLast().get("client_message_id")).isNull();
+        assertThat(rows.getLast().get("reply_to_message_id")).isEqualTo(rows.getFirst().get("message_id"));
+        assertThat(rows.getFirst().get("message_id")).isNotEqualTo(rows.getLast().get("message_id"));
+        String storedMetadata = jdbc.queryForObject(
+                "select response_metadata from chat_messages where message_id=?", String.class,
+                rows.getLast().get("message_id"));
+        assertThat(storedMetadata).contains("CONSULTED_FRAGMENTS", "F1", "documentName");
+        assertThat(jdbc.queryForObject("select count(*) from chat_messages where session_id=?", Long.class, documentSession))
+                .isZero();
+
+        JsonNode retry = json(call("POST", endpoint, token,
+                Map.of("content", "Cual es la potencia optica?", "clientMessageId", "turno-1"), 200));
+        assertThat(retry.path("sources").size()).isEqualTo(1);
+        assertThat(retry.path("assistantMessage").path("sources").size()).isEqualTo(1);
+        assertThat(retry.path("userMessage").path("messageId").asLong())
+                .isEqualTo(turn.path("userMessage").path("messageId").asLong());
+        call("POST", endpoint, token, Map.of("content", "pregunta diferente", "clientMessageId", "turno-1"), 400);
+        assertThat(jdbc.queryForObject("select count(*) from chat_messages where session_id=?", Long.class, sessionId))
+                .isEqualTo(2L);
+
+        JsonNode history = json(call("GET", endpoint, token, null, 200));
+        assertThat(history.size()).isEqualTo(2);
+        assertThat(history.get(0).path("messageId").asLong())
+                .isLessThan(history.get(1).path("messageId").asLong());
+        assertThat(history.get(0).path("createdAt").asText())
+                .isLessThanOrEqualTo(history.get(1).path("createdAt").asText());
+        assertThat(history.get(1).path("sources").size()).isEqualTo(1);
+        assertThat(json(call("GET", endpoint + "?page=0&size=1", token, null, 200)).size()).isEqualTo(1);
+
+        org.mockito.Mockito.clearInvocations(embeddings, ia);
+        call("POST", endpoint, token, Map.of("content", "Y cual es su peso?"), 200);
+        var retrieval = org.mockito.ArgumentCaptor.forClass(String.class);
+        org.mockito.Mockito.verify(embeddings, org.mockito.Mockito.atLeastOnce())
+                .generarEmbeddingConsulta(retrieval.capture());
+        assertThat(retrieval.getAllValues()).anyMatch(query ->
+                query.contains("Cual es la potencia optica?") && query.contains("Y cual es su peso?"));
+        var context = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.dtos.request.IAContextRequestDTO.class);
+        org.mockito.Mockito.verify(ia).generarRespuestaDocumental(context.capture());
+        assertThat(context.getValue().historial()).hasSize(2);
+        assertThat(context.getValue().historial().getFirst().role()).isEqualTo("USER");
+        assertThat(context.getValue().historial().getFirst().content()).isEqualTo("Cual es la potencia optica?");
+        assertThat(context.getValue().historial().get(1).role()).isEqualTo("ASSISTANT");
+        assertThat(context.getValue().question()).isEqualTo("Y cual es su peso?");
+
+        org.mockito.Mockito.clearInvocations(ia, embeddings);
+        String documentEndpoint = "/api/chat/sessions/" + documentSession + "/messages";
+        JsonNode documentTurn = json(call("POST", documentEndpoint, token,
+                Map.of("content", "Resume el contrato"), 200));
+        assertThat(documentTurn.path("sources").size()).isEqualTo(1);
+        assertThat(documentTurn.path("sources").get(0).path("documentId").asLong()).isEqualTo(documentId);
+        assertThat(jdbc.queryForObject("select count(*) from chat_messages where session_id=?", Long.class, documentSession))
+                .isEqualTo(2L);
+
+        org.mockito.Mockito.doThrow(new pe.edu.upc.legalai.exceptions.IAServiceException()).when(ia)
+                .generarRespuestaDocumental(org.mockito.ArgumentMatchers.any());
+        call("POST", endpoint, token, Map.of("content", "Pregunta que fallara", "clientMessageId", "turno-fallido"), 503);
+        assertThat(jdbc.queryForList("select sender_type from chat_messages where session_id=? order by message_id", sessionId))
+                .extracting(row -> row.get("sender_type")).containsExactly("USER", "ASSISTANT", "USER", "ASSISTANT", "USER");
+        org.mockito.Mockito.doReturn(answer).when(ia)
+                .generarRespuestaDocumental(org.mockito.ArgumentMatchers.any());
+        JsonNode resumed = json(call("POST", endpoint, token,
+                Map.of("content", "Pregunta que fallara", "clientMessageId", "turno-fallido"), 200));
+        assertThat(resumed.path("userMessage").path("content").asText()).isEqualTo("Pregunta que fallara");
+        assertThat(jdbc.queryForObject("select count(*) from chat_messages where session_id=?", Long.class, sessionId))
+                .isEqualTo(6L);
+
+        var sessionRows = jdbc.queryForList("select details from audit_logs where user_id=? and action='CREATE_CHAT_SESSION'",
+                String.class, userId);
+        assertThat(sessionRows).hasSize(2)
+                .anyMatch(details -> details.equals("caseId=" + caseId + "; scope=Expediente"))
+                .anyMatch(details -> details.equals("caseId=" + caseId + "; scope=Documento"));
+        assertThat(jdbc.queryForList("select details from audit_logs where user_id=? and action='SEND_CHAT_MESSAGE'",
+                String.class, userId)).hasSize(5)
+                .anyMatch(details -> details.contains("result=SUCCESS"))
+                .anyMatch(details -> details.contains("result=FAILED"))
+                .allMatch(details -> !details.contains("potencia") && !details.contains("20 W")
+                        && !details.contains("turno-1"));
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where user_id=? and action='SEND_CHAT_MESSAGE'"
+                + " and created_at is null", Long.class, userId)).isZero();
+
+        JsonNode renamed = json(call("PATCH", "/api/chat/sessions/" + sessionId, token,
+                Map.of("title", "Titulo actualizado"), 200));
+        assertThat(renamed.path("title").asText()).isEqualTo("Titulo actualizado");
+        call("PATCH", "/api/chat/sessions/" + sessionId, token, Map.of("title", " "), 400);
+        JsonNode list = json(call("GET", "/api/chat/sessions?caseId=" + caseId, token, null, 200));
+        assertThat(list.size()).isEqualTo(2);
+        assertThat(list.get(0).path("sessionId").asLong()).isEqualTo(sessionId);
+        assertThat(list.get(1).path("sessionId").asLong()).isEqualTo(documentSession);
+
+        assertThat(jdbc.queryForObject("select count(*) from document_chunks where document_id=?", Long.class, documentId))
+                .isEqualTo(1L);
+        assertThat(call("DELETE", "/api/chat/sessions/" + sessionId, token, null, 204).body()).isEmpty();
+        assertThat(jdbc.queryForObject("select count(*) from chat_messages where session_id=?", Long.class, sessionId))
+                .isZero();
+        assertThat(jdbc.queryForObject("select count(*) from chat_sessions where session_id=?", Long.class, sessionId))
+                .isZero();
+        assertThat(jdbc.queryForObject("select count(*) from documents where document_id=?", Long.class, documentId))
+                .isEqualTo(1L);
+        assertThat(jdbc.queryForObject("select count(*) from document_chunks where document_id=?", Long.class, documentId))
+                .isEqualTo(1L);
+        assertThat(jdbc.queryForObject("select count(*) from audit_logs where user_id=? and action='DELETE_CHAT_SESSION'",
+                Long.class, userId)).isEqualTo(1L);
+        call("GET", "/api/chat/sessions/" + sessionId, token, null, 404);
+
+        jdbc.update("delete from document_chunks where document_id=?", documentId);
+        jdbc.update("delete from document_chunks where document_id=?", otherDocumentId);
+        JsonNode docs = json(call("GET", "/v3/api-docs", null, null, 200));
+        assertThat(docs.path("paths").has("/api/chat/sessions")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions").has("post")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions").has("get")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions/{sessionId}").has("patch")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions/{sessionId}").has("delete")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions/{sessionId}/messages").has("post")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions/{sessionId}/messages").has("get")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions").path("post").path("responses").has("201")).isTrue();
+        assertThat(docs.path("paths").path("/api/chat/sessions/{sessionId}").path("delete")
+                .path("responses").has("204")).isTrue();
+    }
+
+    private long chatDocument(String token, long caseId, String fileName) throws Exception {
+        return json(call("POST", "/api/cases/" + caseId + "/documents", token,
+                Map.of("fileName", fileName, "category", "CONTRACT"), 201)).path("documentId").asLong();
+    }
+
+    private long embeddingDocument(String token, long caseId) throws Exception {
+        return json(call("POST", "/api/cases/" + caseId + "/documents", token,
+                Map.of("fileName", "retrieval.pdf", "category", "CONTRACT"), 201)).path("documentId").asLong();
+    }
+
     @org.junit.jupiter.api.io.TempDir
     static java.nio.file.Path uploadStorage;
 

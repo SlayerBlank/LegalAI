@@ -11,12 +11,12 @@ import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.DuplicateResourceException;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.UnauthorizedException;
-import pe.edu.upc.legalai.repositories.RolRepository;
-import pe.edu.upc.legalai.repositories.UsuarioRepository;
-import pe.edu.upc.legalai.DTOs.request.AuthLoginRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.AuthRegisterRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.AuthResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.UsuarioResponseDTO;
+import pe.edu.upc.legalai.repositories.IRolRepository;
+import pe.edu.upc.legalai.repositories.IUsuarioRepository;
+import pe.edu.upc.legalai.dtos.request.AuthLoginRequestDTO;
+import pe.edu.upc.legalai.dtos.request.AuthRegisterRequestDTO;
+import pe.edu.upc.legalai.dtos.response.AuthResponseDTO;
+import pe.edu.upc.legalai.dtos.response.UsuarioResponseDTO;
 import pe.edu.upc.legalai.securities.JwtTokenUtil;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.AuthService;
@@ -26,14 +26,14 @@ import java.util.Locale;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private final UsuarioRepository usuarioRepository;
-    private final RolRepository rolRepository;
+    private final IUsuarioRepository usuarioRepository;
+    private final IRolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final AuditLogService auditLogService;
 
-    public AuthServiceImpl(UsuarioRepository usuarioRepository, RolRepository rolRepository,
+    public AuthServiceImpl(IUsuarioRepository usuarioRepository, IRolRepository rolRepository,
                            PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
                            JwtTokenUtil jwtTokenUtil, AuditLogService auditLogService) {
         this.usuarioRepository = usuarioRepository;

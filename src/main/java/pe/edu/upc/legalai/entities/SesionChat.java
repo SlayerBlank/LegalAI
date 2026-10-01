@@ -3,6 +3,8 @@ package pe.edu.upc.legalai.entities;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "chat_sessions")
@@ -21,6 +23,13 @@ public class SesionChat {
     @JoinColumn(name = "user_id", nullable = false)
     private Usuario usuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_id")
+    private Documento documento;
+
+    @Column(name = "document_scope_required", nullable = false, columnDefinition = "boolean default false")
+    private boolean documentScopeRequired;
+
     @Column(name = "title", length = 150)
     private String titulo;
 
@@ -29,6 +38,9 @@ public class SesionChat {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "sesion")
+    private List<Mensajes> mensajes = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -63,6 +75,30 @@ public class SesionChat {
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
+    }
+
+    public Documento getDocumento() {
+        return documento;
+    }
+
+    public void setDocumento(Documento documento) {
+        this.documento = documento;
+    }
+
+    public boolean isDocumentScopeRequired() {
+        return documentScopeRequired;
+    }
+
+    public void setDocumentScopeRequired(boolean documentScopeRequired) {
+        this.documentScopeRequired = documentScopeRequired;
+    }
+
+    public List<Mensajes> getMensajes() {
+        return mensajes;
+    }
+
+    public void setMensajes(List<Mensajes> mensajes) {
+        this.mensajes = mensajes;
     }
 
     public String getTitulo() {

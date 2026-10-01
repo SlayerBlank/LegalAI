@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.DTOs.request.SesionChatRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
-import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
+import pe.edu.upc.legalai.dtos.request.SesionChatRequestDTO;
+import pe.edu.upc.legalai.dtos.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.servicesinterfaces.ISesionChatService;
 
 import java.util.List;
 
@@ -25,9 +25,9 @@ import java.util.List;
 @Tag(name = "Sesiones de chat", description = "Gestion de sesiones de chat sobre expedientes del usuario autenticado")
 public class SesionChatController {
 
-    private final SesionChatService sesionChatService;
+    private final ISesionChatService sesionChatService;
 
-    public SesionChatController(SesionChatService sesionChatService) {
+    public SesionChatController(ISesionChatService sesionChatService) {
         this.sesionChatService = sesionChatService;
     }
 

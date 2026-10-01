@@ -2,7 +2,7 @@ package pe.edu.upc.legalai.servicesinterfaces;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pe.edu.upc.legalai.DTOs.response.AuditLogResponseDTO;
+import pe.edu.upc.legalai.dtos.response.AuditLogResponseDTO;
 import pe.edu.upc.legalai.entities.Usuario;
 
 import java.time.LocalDateTime;

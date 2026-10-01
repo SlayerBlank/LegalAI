@@ -1,15 +1,14 @@
 package pe.edu.upc.legalai.controllers;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import pe.edu.upc.legalai.DTOs.request.SummariesRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.SummariesResponseDTO;
+import pe.edu.upc.legalai.dtos.request.SummariesRequestDTO;
+import pe.edu.upc.legalai.dtos.response.SummariesResponseDTO;
 import pe.edu.upc.legalai.entities.Summaries;
 import pe.edu.upc.legalai.entities.Documento;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.servicesinterfaces.SummariesService;
+import pe.edu.upc.legalai.servicesinterfaces.ISummariesService;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,11 +16,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/summaries")
 public class SummariesController {
 
-    @Autowired
-    private SummariesService sS;
+    private final ISummariesService sS;
+    private final ModelMapper modelMapper;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    public SummariesController(ISummariesService sS, ModelMapper modelMapper) {
+        this.sS = sS;
+        this.modelMapper = modelMapper;
+    }
 
     @PostMapping
     public void insert(@RequestBody SummariesRequestDTO dto) {

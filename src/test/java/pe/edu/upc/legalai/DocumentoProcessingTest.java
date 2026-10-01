@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.transaction.support.*;
 import pe.edu.upc.legalai.entities.*;
 import pe.edu.upc.legalai.exceptions.*;
-import pe.edu.upc.legalai.repositories.DocumentoRepository;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.servicesimplements.DocumentoProcessingServiceImpl;
 import pe.edu.upc.legalai.servicesinterfaces.*;
 
@@ -20,10 +20,10 @@ import static org.mockito.Mockito.*;
 
 class DocumentoProcessingTest {
     @TempDir Path storage;
-    final DocumentoRepository documents = mock(DocumentoRepository.class);
-    final UsuarioService users = mock(UsuarioService.class);
+    final IDocumentoRepository documents = mock(IDocumentoRepository.class);
+    final IUsuarioService users = mock(IUsuarioService.class);
     final AuditLogService audit = mock(AuditLogService.class);
-    final DocumentoService metadata = mock(DocumentoService.class);
+    final IDocumentoService metadata = mock(IDocumentoService.class);
     final Documento document = new Documento();
     final List<EstadoProcesamiento> states = new ArrayList<>();
     DocumentoProcessingServiceImpl service;
@@ -43,7 +43,7 @@ class DocumentoProcessingTest {
             protected void doRollback(DefaultTransactionStatus status) { }
         };
         service = new DocumentoProcessingServiceImpl(documents, users, audit, metadata, manager, storage.toString(),
-                mock(pe.edu.upc.legalai.repositories.DocumentChunkRepository.class));
+                mock(pe.edu.upc.legalai.repositories.IDocumentChunkRepository.class));
     }
 
     static void pdf(Path path, String text) throws Exception {

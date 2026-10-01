@@ -4,9 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.UsuarioResponseDTO;
+import pe.edu.upc.legalai.dtos.response.UsuarioResponseDTO;
 import pe.edu.upc.legalai.controllers.UsuarioController;
-import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
+import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
 import java.time.LocalDateTime;
 
@@ -18,12 +18,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class UsuarioControllerTest {
 
-    private UsuarioService service;
+    private IUsuarioService service;
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
-        service = mock(UsuarioService.class);
+        service = mock(IUsuarioService.class);
         mvc = MockMvcBuilders.standaloneSetup(new UsuarioController(service)).build();
     }
 

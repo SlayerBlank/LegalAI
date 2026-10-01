@@ -7,7 +7,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pe.edu.upc.legalai.controllers.IAController;
-import pe.edu.upc.legalai.DTOs.response.IAResponseDTO;
+import pe.edu.upc.legalai.dtos.response.IAResponseDTO;
 import pe.edu.upc.legalai.exceptions.GlobalExceptionHandler;
 import pe.edu.upc.legalai.exceptions.IAServiceException;
 import pe.edu.upc.legalai.servicesinterfaces.IAService;

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pe.edu.upc.legalai.DTOs.response.*;
+import pe.edu.upc.legalai.dtos.response.*;
 import pe.edu.upc.legalai.entities.*;
 import pe.edu.upc.legalai.exceptions.*;
 import pe.edu.upc.legalai.repositories.*;
@@ -15,14 +15,14 @@ import java.util.List;
 @Service
 public class DocumentChunkServiceImpl implements DocumentChunkService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentChunkServiceImpl.class);
-    private final DocumentoRepository documents;
-    private final DocumentChunkRepository chunks;
-    private final UsuarioService users;
+    private final IDocumentoRepository documents;
+    private final IDocumentChunkRepository chunks;
+    private final IUsuarioService users;
     private final AuditLogService audit;
     private final CharacterChunker chunker;
 
-    public DocumentChunkServiceImpl(DocumentoRepository documents, DocumentChunkRepository chunks,
-            UsuarioService users, AuditLogService audit, CharacterChunker chunker) {
+    public DocumentChunkServiceImpl(IDocumentoRepository documents, IDocumentChunkRepository chunks,
+            IUsuarioService users, AuditLogService audit, CharacterChunker chunker) {
         this.documents = documents;
         this.chunks = chunks;
         this.users = users;

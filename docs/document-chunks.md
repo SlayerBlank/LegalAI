@@ -2,7 +2,8 @@
 
 `DocumentChunk` guarda fragmentos derivados del texto extraido en
 `document_chunks`, con FK al documento y UNIQUE `(document_id, chunk_index)`.
-No contiene embeddings, vectores ni integraciones de IA.
+El chunking no llama a IA. Los embeddings se generan por separado y se guardan
+en la misma tabla mediante acceso nativo pgvector; ver `semantic-search.md`.
 
 Antes de iniciar en una base existente, ejecutar
 `database/migrations/20261001_document_chunks.sql`. La FK elimina los chunks

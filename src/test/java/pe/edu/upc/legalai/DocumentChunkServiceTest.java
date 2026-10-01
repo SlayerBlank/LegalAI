@@ -11,9 +11,9 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class DocumentChunkServiceTest {
-    final DocumentoRepository documents = mock(DocumentoRepository.class);
-    final DocumentChunkRepository chunks = mock(DocumentChunkRepository.class);
-    final UsuarioService users = mock(UsuarioService.class);
+    final IDocumentoRepository documents = mock(IDocumentoRepository.class);
+    final IDocumentChunkRepository chunks = mock(IDocumentChunkRepository.class);
+    final IUsuarioService users = mock(IUsuarioService.class);
     final AuditLogService audit = mock(AuditLogService.class);
     final Documento document = new Documento();
     DocumentChunkService service;

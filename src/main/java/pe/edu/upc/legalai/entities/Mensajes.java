@@ -2,6 +2,8 @@ package pe.edu.upc.legalai.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,15 +27,26 @@ public class Mensajes {
     @Column(name = "message_id")
     private Long messageId;
 
-    //@ManyToOne(fetch = FetchType.LAZY, optional = false)
-    //@JoinColumn(name = "session_id", nullable = false)
-    //private SesionChat sesion;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "session_id", nullable = false)
+    private SesionChat sesion;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_message_id")
+    private Mensajes respuestaA;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "sender_type", nullable = false, length = 20)
-    private String senderType;
+    private SenderType senderType;
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "client_message_id", length = 64)
+    private String clientMessageId;
+
+    @Column(name = "response_metadata", columnDefinition = "TEXT")
+    private String responseMetadata;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,15 +63,27 @@ public class Mensajes {
         this.messageId = messageId;
     }
 
-    //public SesionChat getSesion() {return sesion;}
+    public SesionChat getSesion() {
+        return sesion;
+    }
 
-    //public void setSesion(SesionChat sesion) {this.sesion = sesion;}
+    public void setSesion(SesionChat sesion) {
+        this.sesion = sesion;
+    }
 
-    public String getSenderType() {
+    public Mensajes getRespuestaA() {
+        return respuestaA;
+    }
+
+    public void setRespuestaA(Mensajes respuestaA) {
+        this.respuestaA = respuestaA;
+    }
+
+    public SenderType getSenderType() {
         return senderType;
     }
 
-    public void setSenderType(String senderType) {
+    public void setSenderType(SenderType senderType) {
         this.senderType = senderType;
     }
 
@@ -68,6 +93,22 @@ public class Mensajes {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getClientMessageId() {
+        return clientMessageId;
+    }
+
+    public void setClientMessageId(String clientMessageId) {
+        this.clientMessageId = clientMessageId;
+    }
+
+    public String getResponseMetadata() {
+        return responseMetadata;
+    }
+
+    public void setResponseMetadata(String responseMetadata) {
+        this.responseMetadata = responseMetadata;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -17,12 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
-import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
-import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
+import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
+import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
 import java.util.List;
 
@@ -31,10 +31,10 @@ import java.util.List;
 @Tag(name = "Expedientes", description = "Gestion de expedientes del usuario autenticado")
 public class ExpedienteController {
 
-    private final ExpedienteService expedienteService;
-    private final DocumentoService documentoService;
+    private final IExpedienteService expedienteService;
+    private final IDocumentoService documentoService;
 
-    public ExpedienteController(ExpedienteService expedienteService, DocumentoService documentoService) {
+    public ExpedienteController(IExpedienteService expedienteService, IDocumentoService documentoService) {
         this.expedienteService = expedienteService;
         this.documentoService = documentoService;
     }

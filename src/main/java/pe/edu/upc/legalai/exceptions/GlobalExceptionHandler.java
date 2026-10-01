@@ -28,6 +28,16 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(RAGException.class)
+    public ResponseEntity<ErrorResponse> handleRAG(RAGException ex, HttpServletRequest request) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(EmbeddingException.class)
+    public ResponseEntity<ErrorResponse> handleEmbedding(EmbeddingException ex, HttpServletRequest request) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(ChunkGenerationException.class)
     public ResponseEntity<ErrorResponse> handleChunkGeneration(ChunkGenerationException ex, HttpServletRequest request) {
         LOGGER.error("Fallo al generar chunks en {}", request.getRequestURI(), ex);

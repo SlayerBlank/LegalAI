@@ -1,8 +1,8 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.DTOs.request.AuthLoginRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.AuthRegisterRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.AuthResponseDTO;
+import pe.edu.upc.legalai.dtos.request.AuthLoginRequestDTO;
+import pe.edu.upc.legalai.dtos.request.AuthRegisterRequestDTO;
+import pe.edu.upc.legalai.dtos.response.AuthResponseDTO;
 
 public interface AuthService {
 

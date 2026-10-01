@@ -1,23 +1,23 @@
 package pe.edu.upc.legalai;
 
 import org.junit.jupiter.api.Test;
-import pe.edu.upc.legalai.config.ModelMapperConfig;
+import pe.edu.upc.legalai.configs.ModelMapperConfig;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.DTOs.request.ClienteRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
-import pe.edu.upc.legalai.repositories.ClienteRepository;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
+import pe.edu.upc.legalai.repositories.IClienteRepository;
+import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
-import pe.edu.upc.legalai.servicesimplements.ClienteServiceImpl;
-import pe.edu.upc.legalai.servicesimplements.ExpedienteServiceImpl;
+import pe.edu.upc.legalai.servicesimplements.ClienteServiceImplement;
+import pe.edu.upc.legalai.servicesimplements.ExpedienteServiceImplement;
 
 class ModelMapperConfigTest {
 
@@ -43,15 +43,15 @@ class ModelMapperConfigTest {
         request.setClientId(10L);
         request.setTitle("Nuevo titulo");
         // Omitted business fields must retain their existing values.
-        var cases = mock(ExpedienteRepository.class);
-        var clients = mock(ClienteRepository.class);
-        var users = mock(UsuarioService.class);
+        var cases = mock(IExpedienteRepository.class);
+        var clients = mock(IClienteRepository.class);
+        var users = mock(IUsuarioService.class);
         when(users.obtenerUsuarioAutenticado()).thenReturn(owner);
         when(cases.findByCaseIdAndOwnerUserId(20L, 1L)).thenReturn(Optional.of(expediente));
         when(clients.findByClientIdAndOwnerUserId(10L, 1L)).thenReturn(Optional.of(client));
         when(cases.saveAndFlush(expediente)).thenReturn(expediente);
 
-        new ExpedienteServiceImpl(cases, clients, users, mock(AuditLogService.class)).actualizar(20L, request);
+        new ExpedienteServiceImplement(cases, clients, users, mock(AuditLogService.class)).actualizar(20L, request);
 
         assertThat(expediente.getTitle()).isEqualTo("Nuevo titulo");
         assertThat(expediente.getClient()).isSameAs(client);
@@ -71,12 +71,12 @@ class ModelMapperConfigTest {
         var request = new ClienteRequestDTO();
         request.setFullNameOrCompany("Cliente actualizado");
 
-        var clients = mock(ClienteRepository.class);
-        var users = mock(UsuarioService.class);
+        var clients = mock(IClienteRepository.class);
+        var users = mock(IUsuarioService.class);
         when(users.obtenerUsuarioAutenticado()).thenReturn(owner);
         when(clients.findByClientIdAndOwnerUserId(10L, 1L)).thenReturn(Optional.of(client));
         when(clients.saveAndFlush(client)).thenReturn(client);
-        new ClienteServiceImpl(clients, users, mock(AuditLogService.class)).actualizar(10L, request);
+        new ClienteServiceImplement(clients, users, mock(AuditLogService.class)).actualizar(10L, request);
 
         assertThat(client.getFullNameOrCompany()).isEqualTo("Cliente actualizado");
         assertThat(client.getPhone()).isNull();

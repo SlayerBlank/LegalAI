@@ -1,14 +1,13 @@
 package pe.edu.upc.legalai.controllers;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import pe.edu.upc.legalai.DTOs.request.DraftsRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.DraftsResponseDTO;
+import pe.edu.upc.legalai.dtos.request.DraftsRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DraftsResponseDTO;
 import pe.edu.upc.legalai.entities.Drafts;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.servicesinterfaces.DraftsService;
+import pe.edu.upc.legalai.servicesinterfaces.IDraftsService;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,11 +15,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/drafts")
 public class DraftsController {
 
-    @Autowired
-    private DraftsService dS;
+    private final IDraftsService dS;
+    private final ModelMapper modelMapper;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    public DraftsController(IDraftsService dS, ModelMapper modelMapper) {
+        this.dS = dS;
+        this.modelMapper = modelMapper;
+    }
 
     @PostMapping
     public void insert(@RequestBody DraftsRequestDTO dto) {

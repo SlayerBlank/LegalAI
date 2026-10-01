@@ -4,8 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.edu.upc.legalai.DTOs.response.ChunkGenerationResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentChunkResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ChunkGenerationResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentChunkResponseDTO;
 import pe.edu.upc.legalai.controllers.DocumentChunkController;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentChunkService;
 
