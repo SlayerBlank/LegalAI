@@ -17,12 +17,12 @@ public class DocumentChunkServiceImpl implements DocumentChunkService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentChunkServiceImpl.class);
     private final IDocumentoRepository documents;
     private final IDocumentChunkRepository chunks;
-    private final UsuarioService users;
+    private final IUsuarioService users;
     private final AuditLogService audit;
     private final CharacterChunker chunker;
 
     public DocumentChunkServiceImpl(IDocumentoRepository documents, IDocumentChunkRepository chunks,
-            UsuarioService users, AuditLogService audit, CharacterChunker chunker) {
+            IUsuarioService users, AuditLogService audit, CharacterChunker chunker) {
         this.documents = documents;
         this.chunks = chunks;
         this.users = users;

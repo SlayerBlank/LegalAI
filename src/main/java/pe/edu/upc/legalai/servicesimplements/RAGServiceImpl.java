@@ -36,13 +36,13 @@ public class RAGServiceImpl implements RAGService {
             """;
     private final SemanticSearchService retrieval;
     private final IAService ia;
-    private final UsuarioService users;
+    private final IUsuarioService users;
     private final RAGAuditService audit;
     private final RAGSettings settings;
     private final RAGContextBuilder contexts;
     private final ChatQueryRewriter rewriter;
 
-    public RAGServiceImpl(SemanticSearchService retrieval, IAService ia, UsuarioService users,
+    public RAGServiceImpl(SemanticSearchService retrieval, IAService ia, IUsuarioService users,
             RAGAuditService audit, RAGSettings settings, RAGContextBuilder contexts, ChatQueryRewriter rewriter) {
         this.retrieval = retrieval;
         this.ia = ia;

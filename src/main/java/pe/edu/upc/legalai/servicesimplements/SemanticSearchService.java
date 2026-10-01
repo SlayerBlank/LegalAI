@@ -17,12 +17,12 @@ public class SemanticSearchService {
     private final IExpedienteRepository cases;
     private final IDocumentChunkRepository chunks;
     private final ChunkEmbeddingRepository vectors;
-    private final UsuarioService users;
+    private final IUsuarioService users;
     private final EmbeddingService embeddings;
     private final EmbeddingSettings settings;
 
     public SemanticSearchService(IDocumentoRepository documents, IExpedienteRepository cases,
-            IDocumentChunkRepository chunks, ChunkEmbeddingRepository vectors, UsuarioService users,
+            IDocumentChunkRepository chunks, ChunkEmbeddingRepository vectors, IUsuarioService users,
             EmbeddingService embeddings, EmbeddingSettings settings) {
         this.documents = documents;
         this.cases = cases;

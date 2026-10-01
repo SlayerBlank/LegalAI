@@ -28,7 +28,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/chat")
-@Tag(name = "Chat conversacional", description = "Conversaciones persistentes con memoria y RAG sobre expedientes propios")
+@Tag(name = "Chat", description = "Conversaciones persistentes con memoria y RAG sobre expedientes propios")
 public class ChatController {
 
     private final ChatService chatService;

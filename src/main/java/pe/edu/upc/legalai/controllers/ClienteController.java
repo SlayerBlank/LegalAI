@@ -17,20 +17,20 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
-import pe.edu.upc.legalai.servicesinterfaces.ClienteService;
-import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
+import pe.edu.upc.legalai.servicesinterfaces.IClienteService;
+import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
-@Tag(name = "Clientes", description = "Gestion de clientes del usuario autenticado")
+@Tag(name = "Clients", description = "Gestion de clientes del usuario autenticado")
 public class ClienteController {
 
-    private final ClienteService clienteService;
-    private final ExpedienteService expedienteService;
+    private final IClienteService clienteService;
+    private final IExpedienteService expedienteService;
 
-    public ClienteController(ClienteService clienteService, ExpedienteService expedienteService) {
+    public ClienteController(IClienteService clienteService, IExpedienteService expedienteService) {
         this.clienteService = clienteService;
         this.expedienteService = expedienteService;
     }

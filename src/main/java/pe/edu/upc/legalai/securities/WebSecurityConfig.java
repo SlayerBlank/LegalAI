@@ -49,6 +49,7 @@ public class WebSecurityConfig {
                                 "/webjars/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers("/api/roles", "/api/roles/**", "/api/audit-logs", "/api/audit-logs/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
         http.authenticationProvider(authenticationProvider());

@@ -32,7 +32,7 @@ import pe.edu.upc.legalai.repositories.IMensajesRepository;
 import pe.edu.upc.legalai.repositories.ISesionChatRepository;
 import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 import pe.edu.upc.legalai.servicesinterfaces.RAGService;
-import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
+import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,14 +48,14 @@ public class ChatServiceImpl implements ChatService {
     private final IMensajesRepository mensajes;
     private final IExpedienteRepository expedientes;
     private final IDocumentoRepository documentos;
-    private final UsuarioService usuarios;
+    private final IUsuarioService usuarios;
     private final RAGService rag;
     private final ChatStore store;
     private final ChatAuditService auditoria;
     private final ChatSettings settings;
 
     public ChatServiceImpl(ISesionChatRepository sesiones, IMensajesRepository mensajes,
-            IExpedienteRepository expedientes, IDocumentoRepository documentos, UsuarioService usuarios,
+            IExpedienteRepository expedientes, IDocumentoRepository documentos, IUsuarioService usuarios,
             RAGService rag, ChatStore store, ChatAuditService auditoria, ChatSettings settings) {
         this.sesiones = sesiones;
         this.mensajes = mensajes;
@@ -136,6 +136,7 @@ public class ChatServiceImpl implements ChatService {
         SesionChat sesion = buscarSesionPropia(sessionId, usuario);
         sesion.setTitulo(titulo);
         SesionChat guardada = sesiones.save(sesion);
+        auditoria.registrar(usuario, "UPDATE_CHAT_SESSION", sessionId, "title=UPDATED");
         return toResponse(guardada, mensajes.countBySesionId(sessionId));
     }
 
