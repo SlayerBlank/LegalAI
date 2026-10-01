@@ -14,6 +14,7 @@ import pe.edu.upc.legalai.entities.SenderType;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.IMensajesRepository;
 import pe.edu.upc.legalai.repositories.ISesionChatRepository;
+import pe.edu.upc.legalai.servicesinterfaces.ICitacionesIAService;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
@@ -36,11 +37,14 @@ public class ChatStore {
     private final ISesionChatRepository sesiones;
     private final IMensajesRepository mensajes;
     private final ObjectMapper mapper;
+    private final ICitacionesIAService citations;
 
-    public ChatStore(ISesionChatRepository sesiones, IMensajesRepository mensajes, ObjectMapper mapper) {
+    public ChatStore(ISesionChatRepository sesiones, IMensajesRepository mensajes, ObjectMapper mapper,
+                     ICitacionesIAService citations) {
         this.sesiones = sesiones;
         this.mensajes = mensajes;
         this.mapper = mapper;
+        this.citations = citations;
     }
 
     @Transactional(readOnly = true)
@@ -118,6 +122,7 @@ public class ChatStore {
                 response.sourcesType() == null ? "CONSULTED_FRAGMENTS" : response.sourcesType(),
                 response.sources())));
         Mensajes guardado = mensajes.save(mensaje);
+        citations.registrar(guardado, response.sources());
         tocar(sesion);
         return guardado;
     }

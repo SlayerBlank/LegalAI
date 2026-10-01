@@ -100,6 +100,7 @@ public class ExpedienteServiceImplement implements IExpedienteService {
     public void eliminar(Long id) {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         Expediente expediente = getExpediente(id, usuario.getUserId());
+        auditLogService.registrar(usuario, "DELETE_CASE", "Expediente", expediente.getCaseId(), expediente.getTitle());
         expedienteRepository.delete(expediente);
     }
 

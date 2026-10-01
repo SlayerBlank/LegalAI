@@ -24,7 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
-@Tag(name = "Clientes", description = "Gestion de clientes del usuario autenticado")
+@Tag(name = "Clients", description = "Gestion de clientes del usuario autenticado")
 public class ClienteController {
 
     private final IClienteService clienteService;

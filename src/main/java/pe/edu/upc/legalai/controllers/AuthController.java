@@ -17,7 +17,7 @@ import pe.edu.upc.legalai.servicesinterfaces.AuthService;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Auth", description = "Autenticacion y registro de usuarios")
+@Tag(name = "Authentication", description = "Autenticacion y registro de usuarios")
 public class AuthController {
 
     private final AuthService authService;

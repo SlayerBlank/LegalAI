@@ -11,8 +11,8 @@ import java.util.HashSet;
 
 /**
  * Native vector access. JdbcTemplate participates in the existing JPA transaction.
- * Specialized JDBC/pgvector repository: intentionally kept outside the I*Repository
- * naming convention for JPA interfaces; this class does not extend JpaRepository.
+ * This specialized JDBC/pgvector class intentionally remains outside the I*Repository
+ * naming convention used for JPA interfaces.
  */
 @Repository
 public class ChunkEmbeddingRepository {
@@ -39,6 +39,14 @@ public class ChunkEmbeddingRepository {
     public Set<Long> validChunkIds(Long documentId) {
         return new HashSet<>(jdbc.queryForList("""
                 SELECT chunk_id FROM document_chunks
+                WHERE document_id = ? AND embedding IS NOT NULL AND embedding_model = ?
+                  AND vector_dims(embedding) = ? AND vector_norm(embedding) > 0
+                """, Long.class, documentId, settings.model(), settings.dimension()));
+    }
+
+    public long countValidChunks(Long documentId) {
+        return java.util.Objects.requireNonNull(jdbc.queryForObject("""
+                SELECT count(*) FROM document_chunks
                 WHERE document_id = ? AND embedding IS NOT NULL AND embedding_model = ?
                   AND vector_dims(embedding) = ? AND vector_norm(embedding) > 0
                 """, Long.class, documentId, settings.model(), settings.dimension()));
