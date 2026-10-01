@@ -3,10 +3,10 @@ package pe.edu.upc.legalai.servicesimplements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import pe.edu.upc.legalai.DTOs.request.ChatHistoryTurnDTO;
-import pe.edu.upc.legalai.DTOs.request.IARequestDTO;
-import pe.edu.upc.legalai.config.ChatSettings;
-import pe.edu.upc.legalai.config.RAGSettings;
+import pe.edu.upc.legalai.dtos.request.ChatHistoryTurnDTO;
+import pe.edu.upc.legalai.dtos.request.IARequestDTO;
+import pe.edu.upc.legalai.configs.ChatSettings;
+import pe.edu.upc.legalai.configs.RAGSettings;
 import pe.edu.upc.legalai.servicesinterfaces.IAService;
 
 import java.text.Normalizer;

@@ -5,15 +5,15 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.AuditLog;
 import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.repositories.AuditLogRepository;
+import pe.edu.upc.legalai.repositories.IAuditLogRepository;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 
 @Service
 public class AuditLogServiceImpl implements AuditLogService {
 
-    private final AuditLogRepository auditLogRepository;
+    private final IAuditLogRepository auditLogRepository;
 
-    public AuditLogServiceImpl(AuditLogRepository auditLogRepository) {
+    public AuditLogServiceImpl(IAuditLogRepository auditLogRepository) {
         this.auditLogRepository = auditLogRepository;
     }
 

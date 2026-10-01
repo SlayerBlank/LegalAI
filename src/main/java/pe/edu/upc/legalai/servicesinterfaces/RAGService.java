@@ -1,8 +1,8 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.DTOs.request.ChatHistoryTurnDTO;
-import pe.edu.upc.legalai.DTOs.request.RAGRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.RAGResponseDTO;
+import pe.edu.upc.legalai.dtos.request.ChatHistoryTurnDTO;
+import pe.edu.upc.legalai.dtos.request.RAGRequestDTO;
+import pe.edu.upc.legalai.dtos.response.RAGResponseDTO;
 
 import java.util.List;
 

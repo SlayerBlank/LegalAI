@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import pe.edu.upc.legalai.DTOs.request.SemanticSearchRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.*;
+import pe.edu.upc.legalai.dtos.request.SemanticSearchRequestDTO;
+import pe.edu.upc.legalai.dtos.response.*;
 import pe.edu.upc.legalai.servicesimplements.SemanticSearchService;
 import java.util.List;
 

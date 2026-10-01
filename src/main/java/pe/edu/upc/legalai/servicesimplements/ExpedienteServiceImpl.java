@@ -8,10 +8,10 @@ import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
-import pe.edu.upc.legalai.repositories.ClienteRepository;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.repositories.IClienteRepository;
+import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -22,12 +22,12 @@ import java.util.List;
 @Service
 public class ExpedienteServiceImpl implements ExpedienteService {
 
-    private final ExpedienteRepository expedienteRepository;
-    private final ClienteRepository clienteRepository;
+    private final IExpedienteRepository expedienteRepository;
+    private final IClienteRepository clienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
 
-    public ExpedienteServiceImpl(ExpedienteRepository expedienteRepository, ClienteRepository clienteRepository,
+    public ExpedienteServiceImpl(IExpedienteRepository expedienteRepository, IClienteRepository clienteRepository,
                                  UsuarioService usuarioService, AuditLogService auditLogService) {
         this.expedienteRepository = expedienteRepository;
         this.clienteRepository = clienteRepository;

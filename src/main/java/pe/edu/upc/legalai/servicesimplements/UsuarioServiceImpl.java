@@ -7,16 +7,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.UnauthorizedException;
-import pe.edu.upc.legalai.repositories.UsuarioRepository;
-import pe.edu.upc.legalai.DTOs.response.UsuarioResponseDTO;
+import pe.edu.upc.legalai.repositories.IUsuarioRepository;
+import pe.edu.upc.legalai.dtos.response.UsuarioResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final IUsuarioRepository usuarioRepository;
 
-    public UsuarioServiceImpl(UsuarioRepository usuarioRepository) {
+    public UsuarioServiceImpl(IUsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
     }
 

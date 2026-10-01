@@ -1,8 +1,8 @@
 package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.stereotype.Component;
-import pe.edu.upc.legalai.DTOs.response.*;
-import pe.edu.upc.legalai.config.RAGSettings;
+import pe.edu.upc.legalai.dtos.response.*;
+import pe.edu.upc.legalai.configs.RAGSettings;
 import tools.jackson.databind.ObjectMapper;
 import java.util.*;
 

@@ -1,7 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;

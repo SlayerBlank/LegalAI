@@ -1,11 +1,11 @@
 package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.stereotype.Service;
-import pe.edu.upc.legalai.DTOs.request.ChatCreateSessionRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ChatUpdateSessionRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.SesionChatRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatSessionResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.dtos.request.ChatCreateSessionRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ChatUpdateSessionRequestDTO;
+import pe.edu.upc.legalai.dtos.request.SesionChatRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ChatSessionResponseDTO;
+import pe.edu.upc.legalai.dtos.response.SesionChatResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;

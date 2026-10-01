@@ -6,17 +6,17 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pe.edu.upc.legalai.DTOs.request.ChatCreateSessionRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ChatHistoryTurnDTO;
-import pe.edu.upc.legalai.DTOs.request.ChatSendMessageRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ChatUpdateSessionRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.RAGRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatMessageDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatMessageResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatSessionResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatTurnMetadata;
-import pe.edu.upc.legalai.DTOs.response.RAGResponseDTO;
-import pe.edu.upc.legalai.config.ChatSettings;
+import pe.edu.upc.legalai.dtos.request.ChatCreateSessionRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ChatHistoryTurnDTO;
+import pe.edu.upc.legalai.dtos.request.ChatSendMessageRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ChatUpdateSessionRequestDTO;
+import pe.edu.upc.legalai.dtos.request.RAGRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ChatMessageDTO;
+import pe.edu.upc.legalai.dtos.response.ChatMessageResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ChatSessionResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ChatTurnMetadata;
+import pe.edu.upc.legalai.dtos.response.RAGResponseDTO;
+import pe.edu.upc.legalai.configs.ChatSettings;
 import pe.edu.upc.legalai.entities.Documento;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Mensajes;
@@ -26,10 +26,10 @@ import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.IAServiceException;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.repositories.DocumentoRepository;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.repositories.MensajesRepository;
-import pe.edu.upc.legalai.repositories.SesionChatRepository;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
+import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.repositories.IMensajesRepository;
+import pe.edu.upc.legalai.repositories.ISesionChatRepository;
 import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 import pe.edu.upc.legalai.servicesinterfaces.RAGService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -44,18 +44,18 @@ public class ChatServiceImpl implements ChatService {
     private static final String TITULO_POR_DEFECTO = "Nueva conversacion";
     private static final String SOURCES_TYPE = "CONSULTED_FRAGMENTS";
 
-    private final SesionChatRepository sesiones;
-    private final MensajesRepository mensajes;
-    private final ExpedienteRepository expedientes;
-    private final DocumentoRepository documentos;
+    private final ISesionChatRepository sesiones;
+    private final IMensajesRepository mensajes;
+    private final IExpedienteRepository expedientes;
+    private final IDocumentoRepository documentos;
     private final UsuarioService usuarios;
     private final RAGService rag;
     private final ChatStore store;
     private final ChatAuditService auditoria;
     private final ChatSettings settings;
 
-    public ChatServiceImpl(SesionChatRepository sesiones, MensajesRepository mensajes,
-            ExpedienteRepository expedientes, DocumentoRepository documentos, UsuarioService usuarios,
+    public ChatServiceImpl(ISesionChatRepository sesiones, IMensajesRepository mensajes,
+            IExpedienteRepository expedientes, IDocumentoRepository documentos, UsuarioService usuarios,
             RAGService rag, ChatStore store, ChatAuditService auditoria, ChatSettings settings) {
         this.sesiones = sesiones;
         this.mensajes = mensajes;

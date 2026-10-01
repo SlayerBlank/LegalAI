@@ -5,9 +5,9 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.repositories.ClienteRepository;
-import pe.edu.upc.legalai.DTOs.request.ClienteRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.ClienteResponseDTO;
+import pe.edu.upc.legalai.repositories.IClienteRepository;
+import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.ClienteService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -17,11 +17,11 @@ import java.util.List;
 @Service
 public class ClienteServiceImpl implements ClienteService {
 
-    private final ClienteRepository clienteRepository;
+    private final IClienteRepository clienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
 
-    public ClienteServiceImpl(ClienteRepository clienteRepository, UsuarioService usuarioService,
+    public ClienteServiceImpl(IClienteRepository clienteRepository, UsuarioService usuarioService,
                               AuditLogService auditLogService) {
         this.clienteRepository = clienteRepository;
         this.usuarioService = usuarioService;

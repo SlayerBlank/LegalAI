@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pe.edu.upc.legalai.controllers.IAController;
-import pe.edu.upc.legalai.DTOs.response.IAResponseDTO;
+import pe.edu.upc.legalai.dtos.response.IAResponseDTO;
 import pe.edu.upc.legalai.securities.*;
 import pe.edu.upc.legalai.servicesinterfaces.IAService;
 

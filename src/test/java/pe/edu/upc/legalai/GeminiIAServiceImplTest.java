@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
-import pe.edu.upc.legalai.DTOs.request.IARequestDTO;
+import pe.edu.upc.legalai.dtos.request.IARequestDTO;
 import pe.edu.upc.legalai.exceptions.IAServiceException;
 import pe.edu.upc.legalai.servicesimplements.GeminiIAServiceImpl;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,7 @@ class GeminiIAServiceImplTest {
             assertThat(parts.get(1).path("text").asText()).contains("Question?");
             return success();
         }, "test-key");
-        var result = provider.generarRespuestaDocumental(new pe.edu.upc.legalai.DTOs.request.IAContextRequestDTO(
+        var result = provider.generarRespuestaDocumental(new pe.edu.upc.legalai.dtos.request.IAContextRequestDTO(
                 "Trusted rules","Untrusted context","Question?"));
         assertThat(result.getModel()).isEqualTo("configured-model");
     }

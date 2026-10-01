@@ -28,8 +28,8 @@ import static org.mockito.Mockito.*;
 
 class DocumentoUploadTest {
     @TempDir Path temp;
-    private final DocumentoRepository documents = mock(DocumentoRepository.class);
-    private final ExpedienteRepository cases = mock(ExpedienteRepository.class);
+    private final IDocumentoRepository documents = mock(IDocumentoRepository.class);
+    private final IExpedienteRepository cases = mock(IExpedienteRepository.class);
     private final UsuarioService users = mock(UsuarioService.class);
     private final AuditLogService audit = mock(AuditLogService.class);
     private final Usuario user = new Usuario();

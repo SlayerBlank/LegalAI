@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
 

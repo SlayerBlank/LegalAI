@@ -1,7 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.DTOs.request.SesionChatRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.dtos.request.SesionChatRequestDTO;
+import pe.edu.upc.legalai.dtos.response.SesionChatResponseDTO;
 
 import java.util.List;
 

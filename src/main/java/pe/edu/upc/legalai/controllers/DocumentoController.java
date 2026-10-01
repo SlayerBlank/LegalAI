@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoTextResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoTextResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoProcessingService;
 

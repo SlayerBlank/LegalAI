@@ -7,14 +7,14 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.repositories.UsuarioRepository;
+import pe.edu.upc.legalai.repositories.IUsuarioRepository;
 
 @Service
 public class UsuarioDetailsService implements UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final IUsuarioRepository usuarioRepository;
 
-    public UsuarioDetailsService(UsuarioRepository usuarioRepository) {
+    public UsuarioDetailsService(IUsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
     }
 

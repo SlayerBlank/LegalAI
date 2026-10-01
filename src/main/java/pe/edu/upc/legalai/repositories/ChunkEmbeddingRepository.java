@@ -2,8 +2,8 @@ package pe.edu.upc.legalai.repositories;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import pe.edu.upc.legalai.DTOs.response.SemanticSearchResultDTO;
-import pe.edu.upc.legalai.config.EmbeddingSettings;
+import pe.edu.upc.legalai.dtos.response.SemanticSearchResultDTO;
+import pe.edu.upc.legalai.configs.EmbeddingSettings;
 import pe.edu.upc.legalai.exceptions.EmbeddingException;
 import java.util.List;
 import java.util.Set;

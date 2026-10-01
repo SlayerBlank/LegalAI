@@ -3,9 +3,9 @@ package pe.edu.upc.legalai;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import pe.edu.upc.legalai.DTOs.request.*;
-import pe.edu.upc.legalai.DTOs.response.*;
-import pe.edu.upc.legalai.config.RAGSettings;
+import pe.edu.upc.legalai.dtos.request.*;
+import pe.edu.upc.legalai.dtos.response.*;
+import pe.edu.upc.legalai.configs.RAGSettings;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.*;
 import pe.edu.upc.legalai.servicesimplements.*;
@@ -30,7 +30,7 @@ class RAGServiceTest {
     }
     RAGServiceImpl service(RAGSettings settings) {
         return new RAGServiceImpl(retrieval, ia, users, audit, settings, new RAGContextBuilder(settings,mapper),
-                new ChatQueryRewriter(ia, new pe.edu.upc.legalai.config.ChatSettings(10, 2000, 20, 100, "heuristic")));
+                new ChatQueryRewriter(ia, new pe.edu.upc.legalai.configs.ChatSettings(10, 2000, 20, 100, "heuristic")));
     }
     RAGRequestDTO request() { var r = new RAGRequestDTO(); r.setQuestion("  Potencia?  "); return r; }
     SemanticSearchResultDTO chunk(long id, String text, double distance, int start, int end) {

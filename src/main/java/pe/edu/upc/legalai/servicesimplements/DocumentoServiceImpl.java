@@ -7,10 +7,10 @@ import pe.edu.upc.legalai.entities.EstadoProcesamiento;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.repositories.DocumentoRepository;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
+import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -39,12 +39,12 @@ public class DocumentoServiceImpl implements DocumentoService {
     private final Path storageRoot;
     private final long maxFileSize;
 
-    private final DocumentoRepository documentoRepository;
-    private final ExpedienteRepository expedienteRepository;
+    private final IDocumentoRepository documentoRepository;
+    private final IExpedienteRepository expedienteRepository;
     private final UsuarioService usuarioService;
     private final AuditLogService auditLogService;
 
-    public DocumentoServiceImpl(DocumentoRepository documentoRepository, ExpedienteRepository expedienteRepository,
+    public DocumentoServiceImpl(IDocumentoRepository documentoRepository, IExpedienteRepository expedienteRepository,
                                 UsuarioService usuarioService, AuditLogService auditLogService,
                                 @Value("${legalai.storage.path}") String storagePath,
                                 @Value("${legalai.documents.max-file-size}") DataSize maxFileSize) {

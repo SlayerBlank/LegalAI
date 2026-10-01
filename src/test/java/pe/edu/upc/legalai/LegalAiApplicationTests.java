@@ -76,7 +76,7 @@ class LegalAiApplicationTests {
         for (long id : new long[]{doc,second,excluded,foreignDoc}) jdbc.update("""
                 update document_chunks set embedding=cast(? as vector),embedding_model='gemini-embedding-001' where document_id=?
                 """,java.util.Arrays.toString(vector),id);
-        var answer = new pe.edu.upc.legalai.DTOs.response.IAResponseDTO();
+        var answer = new pe.edu.upc.legalai.dtos.response.IAResponseDTO();
         answer.setAnswer("private-answer [F1]"); answer.setProvider("gemini"); answer.setModel("mock-model");
         org.mockito.Mockito.when(ia.generarRespuestaDocumental(org.mockito.ArgumentMatchers.any())).thenReturn(answer);
         JsonNode result = json(call("POST",endpoint,token,question,200));
@@ -85,7 +85,7 @@ class LegalAiApplicationTests {
         assertThat(result.path("sources").size()).isEqualTo(1);
         assertThat(result.path("sources").get(0).path("documentId").asLong()).isEqualTo(doc);
         assertThat(result.path("sources").get(0).path("documentName").asText()).isEqualTo("retrieval.pdf");
-        var sent = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.DTOs.request.IAContextRequestDTO.class);
+        var sent = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.dtos.request.IAContextRequestDTO.class);
         org.mockito.Mockito.verify(ia).generarRespuestaDocumental(sent.capture());
         assertThat(objectMapper.readTree(sent.getValue().context()).size()).isEqualTo(1);
         org.mockito.Mockito.clearInvocations(ia,embeddings);
@@ -170,11 +170,11 @@ class LegalAiApplicationTests {
         assertThat(json(call("POST", "/api/cases/" + caseId + "/search", token, Map.of("query","q","topK",1),200)).size()).isEqualTo(1);
 
         var nativeRepository = new pe.edu.upc.legalai.repositories.ChunkEmbeddingRepository(jdbc,
-                new pe.edu.upc.legalai.config.EmbeddingSettings("gemini-embedding-001",768,1));
+                new pe.edu.upc.legalai.configs.EmbeddingSettings("gemini-embedding-001",768,1));
         assertThat(nativeRepository.searchDocument(doc, -1L, near, 5)).isEmpty();
         assertThat(nativeRepository.searchCase(caseId, -1L, near, 5)).isEmpty();
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> new pe.edu.upc.legalai.repositories.ChunkEmbeddingRepository(jdbc,
-                new pe.edu.upc.legalai.config.EmbeddingSettings("gemini-embedding-001",1536,1)).validateSchema())
+                new pe.edu.upc.legalai.configs.EmbeddingSettings("gemini-embedding-001",1536,1)).validateSchema())
                 .isInstanceOf(pe.edu.upc.legalai.exceptions.EmbeddingException.class);
         jdbc.update("update document_chunks set embedding=null, embedding_model=null where document_id=? and chunk_index=0",doc);
         org.mockito.Mockito.clearInvocations(embeddings);
@@ -261,7 +261,7 @@ class LegalAiApplicationTests {
             jdbc.update("update document_chunks set embedding=cast(? as vector),embedding_model='gemini-embedding-001'"
                     + " where document_id=?", java.util.Arrays.toString(vector), id);
         }
-        var answer = new pe.edu.upc.legalai.DTOs.response.IAResponseDTO();
+        var answer = new pe.edu.upc.legalai.dtos.response.IAResponseDTO();
         answer.setAnswer("La potencia optica es 20 W [F1]");
         answer.setProvider("gemini");
         answer.setModel("mock-model");
@@ -326,7 +326,7 @@ class LegalAiApplicationTests {
                 .generarEmbeddingConsulta(retrieval.capture());
         assertThat(retrieval.getAllValues()).anyMatch(query ->
                 query.contains("Cual es la potencia optica?") && query.contains("Y cual es su peso?"));
-        var context = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.DTOs.request.IAContextRequestDTO.class);
+        var context = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.dtos.request.IAContextRequestDTO.class);
         org.mockito.Mockito.verify(ia).generarRespuestaDocumental(context.capture());
         assertThat(context.getValue().historial()).hasSize(2);
         assertThat(context.getValue().historial().getFirst().role()).isEqualTo("USER");

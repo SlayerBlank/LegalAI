@@ -1,11 +1,11 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
-import pe.edu.upc.legalai.DTOs.request.ChatCreateSessionRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ChatSendMessageRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ChatUpdateSessionRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatMessageDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatMessageResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.ChatSessionResponseDTO;
+import pe.edu.upc.legalai.dtos.request.ChatCreateSessionRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ChatSendMessageRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ChatUpdateSessionRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ChatMessageDTO;
+import pe.edu.upc.legalai.dtos.response.ChatMessageResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ChatSessionResponseDTO;
 
 import java.util.List;
 

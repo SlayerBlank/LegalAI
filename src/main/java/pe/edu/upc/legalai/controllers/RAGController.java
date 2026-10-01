@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import pe.edu.upc.legalai.DTOs.request.RAGRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.RAGResponseDTO;
+import pe.edu.upc.legalai.dtos.request.RAGRequestDTO;
+import pe.edu.upc.legalai.dtos.response.RAGResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.RAGService;
 
 @RestController

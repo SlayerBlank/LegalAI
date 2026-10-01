@@ -3,9 +3,9 @@ package pe.edu.upc.legalai;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import pe.edu.upc.legalai.DTOs.request.ChatHistoryTurnDTO;
-import pe.edu.upc.legalai.DTOs.response.IAResponseDTO;
-import pe.edu.upc.legalai.config.ChatSettings;
+import pe.edu.upc.legalai.dtos.request.ChatHistoryTurnDTO;
+import pe.edu.upc.legalai.dtos.response.IAResponseDTO;
+import pe.edu.upc.legalai.configs.ChatSettings;
 import pe.edu.upc.legalai.exceptions.IAServiceException;
 import pe.edu.upc.legalai.servicesimplements.ChatQueryRewriter;
 import pe.edu.upc.legalai.servicesinterfaces.IAService;
@@ -90,7 +90,7 @@ class ChatQueryRewriterTest {
         IAResponseDTO answer = new IAResponseDTO();
         answer.setAnswer("Consulta autonoma");
         when(ia.generarRespuesta(any())).thenReturn(answer);
-        var captor = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.DTOs.request.IARequestDTO.class);
+        var captor = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.dtos.request.IARequestDTO.class);
         rewriter("llm").retrievalQuery("¿Y que pasa?", historial);
         verify(ia).generarRespuesta(captor.capture());
         assertThat(captor.getValue().getPrompt())
@@ -107,7 +107,7 @@ class ChatQueryRewriterTest {
         for (int i = 0; i < 40; i++) {
             largo.add(new ChatHistoryTurnDTO("USER", "pregunta-" + i + " " + "y".repeat(600)));
         }
-        var captor = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.DTOs.request.IARequestDTO.class);
+        var captor = org.mockito.ArgumentCaptor.forClass(pe.edu.upc.legalai.dtos.request.IARequestDTO.class);
         rewriter("llm").retrievalQuery("¿Y que pasa?", largo);
         verify(ia).generarRespuesta(captor.capture());
         assertThat(captor.getValue().getPrompt()).contains("pregunta-39").doesNotContain("pregunta-0 ");

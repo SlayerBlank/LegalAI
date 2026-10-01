@@ -6,14 +6,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pe.edu.upc.legalai.DTOs.response.ChatTurnMetadata;
-import pe.edu.upc.legalai.DTOs.response.RAGResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ChatTurnMetadata;
+import pe.edu.upc.legalai.dtos.response.RAGResponseDTO;
 import pe.edu.upc.legalai.entities.Mensajes;
 import pe.edu.upc.legalai.entities.SesionChat;
 import pe.edu.upc.legalai.entities.SenderType;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.repositories.MensajesRepository;
-import pe.edu.upc.legalai.repositories.SesionChatRepository;
+import pe.edu.upc.legalai.repositories.IMensajesRepository;
+import pe.edu.upc.legalai.repositories.ISesionChatRepository;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
@@ -33,11 +33,11 @@ public class ChatStore {
         }
     }
 
-    private final SesionChatRepository sesiones;
-    private final MensajesRepository mensajes;
+    private final ISesionChatRepository sesiones;
+    private final IMensajesRepository mensajes;
     private final ObjectMapper mapper;
 
-    public ChatStore(SesionChatRepository sesiones, MensajesRepository mensajes, ObjectMapper mapper) {
+    public ChatStore(ISesionChatRepository sesiones, IMensajesRepository mensajes, ObjectMapper mapper) {
         this.sesiones = sesiones;
         this.mensajes = mensajes;
         this.mapper = mapper;

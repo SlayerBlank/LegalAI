@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import pe.edu.upc.legalai.config.EmbeddingSettings;
+import pe.edu.upc.legalai.configs.EmbeddingSettings;
 import pe.edu.upc.legalai.exceptions.EmbeddingException;
 import pe.edu.upc.legalai.servicesinterfaces.EmbeddingService;
 import reactor.core.publisher.Mono;

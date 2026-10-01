@@ -2,9 +2,9 @@ package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pe.edu.upc.legalai.DTOs.request.SemanticSearchRequestDTO;
-import pe.edu.upc.legalai.DTOs.response.*;
-import pe.edu.upc.legalai.config.EmbeddingSettings;
+import pe.edu.upc.legalai.dtos.request.SemanticSearchRequestDTO;
+import pe.edu.upc.legalai.dtos.response.*;
+import pe.edu.upc.legalai.configs.EmbeddingSettings;
 import pe.edu.upc.legalai.entities.DocumentChunk;
 import pe.edu.upc.legalai.exceptions.*;
 import pe.edu.upc.legalai.repositories.*;
@@ -13,16 +13,16 @@ import java.util.List;
 
 @Service
 public class SemanticSearchService {
-    private final DocumentoRepository documents;
-    private final ExpedienteRepository cases;
-    private final DocumentChunkRepository chunks;
+    private final IDocumentoRepository documents;
+    private final IExpedienteRepository cases;
+    private final IDocumentChunkRepository chunks;
     private final ChunkEmbeddingRepository vectors;
     private final UsuarioService users;
     private final EmbeddingService embeddings;
     private final EmbeddingSettings settings;
 
-    public SemanticSearchService(DocumentoRepository documents, ExpedienteRepository cases,
-            DocumentChunkRepository chunks, ChunkEmbeddingRepository vectors, UsuarioService users,
+    public SemanticSearchService(IDocumentoRepository documents, IExpedienteRepository cases,
+            IDocumentChunkRepository chunks, ChunkEmbeddingRepository vectors, UsuarioService users,
             EmbeddingService embeddings, EmbeddingSettings settings) {
         this.documents = documents;
         this.cases = cases;

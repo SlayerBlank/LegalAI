@@ -1,14 +1,14 @@
 package pe.edu.upc.legalai;
 
 import org.junit.jupiter.api.Test;
-import pe.edu.upc.legalai.DTOs.response.RAGResponseDTO;
-import pe.edu.upc.legalai.DTOs.response.RAGSourceDTO;
+import pe.edu.upc.legalai.dtos.response.RAGResponseDTO;
+import pe.edu.upc.legalai.dtos.response.RAGSourceDTO;
 import pe.edu.upc.legalai.entities.Mensajes;
 import pe.edu.upc.legalai.entities.SesionChat;
 import pe.edu.upc.legalai.entities.SenderType;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.repositories.MensajesRepository;
-import pe.edu.upc.legalai.repositories.SesionChatRepository;
+import pe.edu.upc.legalai.repositories.IMensajesRepository;
+import pe.edu.upc.legalai.repositories.ISesionChatRepository;
 import pe.edu.upc.legalai.servicesimplements.ChatStore;
 import tools.jackson.databind.ObjectMapper;
 
@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
 
 class ChatStoreTest {
 
-    final SesionChatRepository sessions = mock(SesionChatRepository.class);
-    final MensajesRepository messages = mock(MensajesRepository.class);
+    final ISesionChatRepository sessions = mock(ISesionChatRepository.class);
+    final IMensajesRepository messages = mock(IMensajesRepository.class);
     final ChatStore store = new ChatStore(sessions, messages, new ObjectMapper());
 
     @Test

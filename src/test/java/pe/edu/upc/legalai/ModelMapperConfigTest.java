@@ -1,19 +1,19 @@
 package pe.edu.upc.legalai;
 
 import org.junit.jupiter.api.Test;
-import pe.edu.upc.legalai.config.ModelMapperConfig;
+import pe.edu.upc.legalai.configs.ModelMapperConfig;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.DTOs.request.ClienteRequestDTO;
-import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
-import pe.edu.upc.legalai.repositories.ClienteRepository;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
+import pe.edu.upc.legalai.repositories.IClienteRepository;
+import pe.edu.upc.legalai.repositories.IExpedienteRepository;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesimplements.ClienteServiceImpl;
@@ -43,8 +43,8 @@ class ModelMapperConfigTest {
         request.setClientId(10L);
         request.setTitle("Nuevo titulo");
         // Omitted business fields must retain their existing values.
-        var cases = mock(ExpedienteRepository.class);
-        var clients = mock(ClienteRepository.class);
+        var cases = mock(IExpedienteRepository.class);
+        var clients = mock(IClienteRepository.class);
         var users = mock(UsuarioService.class);
         when(users.obtenerUsuarioAutenticado()).thenReturn(owner);
         when(cases.findByCaseIdAndOwnerUserId(20L, 1L)).thenReturn(Optional.of(expediente));
@@ -71,7 +71,7 @@ class ModelMapperConfigTest {
         var request = new ClienteRequestDTO();
         request.setFullNameOrCompany("Cliente actualizado");
 
-        var clients = mock(ClienteRepository.class);
+        var clients = mock(IClienteRepository.class);
         var users = mock(UsuarioService.class);
         when(users.obtenerUsuarioAutenticado()).thenReturn(owner);
         when(clients.findByClientIdAndOwnerUserId(10L, 1L)).thenReturn(Optional.of(client));

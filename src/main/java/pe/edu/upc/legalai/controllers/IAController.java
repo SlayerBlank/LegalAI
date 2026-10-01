@@ -9,8 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pe.edu.upc.legalai.DTOs.request.IARequestDTO;
-import pe.edu.upc.legalai.DTOs.response.IAResponseDTO;
+import pe.edu.upc.legalai.dtos.request.IARequestDTO;
+import pe.edu.upc.legalai.dtos.response.IAResponseDTO;
 import pe.edu.upc.legalai.exceptions.ErrorResponse;
 import pe.edu.upc.legalai.servicesinterfaces.IAService;
 

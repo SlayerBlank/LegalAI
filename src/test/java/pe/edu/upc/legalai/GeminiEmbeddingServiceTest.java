@@ -5,7 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.*;
-import pe.edu.upc.legalai.config.EmbeddingSettings;
+import pe.edu.upc.legalai.configs.EmbeddingSettings;
 import pe.edu.upc.legalai.exceptions.EmbeddingException;
 import pe.edu.upc.legalai.servicesimplements.GeminiEmbeddingServiceImpl;
 import reactor.core.publisher.Mono;
