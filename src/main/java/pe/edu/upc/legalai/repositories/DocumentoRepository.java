@@ -18,4 +18,7 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long> {
     List<Documento> findByExpedienteCaseIdAndExpedienteOwnerUserId(Long caseId, Long userId);
 
     Optional<Documento> findByDocumentIdAndExpedienteOwnerUserId(Long documentId, Long userId);
+
+    Optional<Documento> findByDocumentIdAndExpedienteCaseIdAndExpedienteOwnerUserId(Long documentId, Long caseId,
+                                                                                     Long userId);
 }

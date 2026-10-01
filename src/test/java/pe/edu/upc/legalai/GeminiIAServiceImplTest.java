@@ -18,6 +18,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.*;
 
 class GeminiIAServiceImplTest {
+    @Test
+    void groundedRequestSeparatesSystemContextAndQuestion() {
+        var provider = service(outgoing -> {
+            var httpRequest = new org.springframework.mock.http.client.reactive.MockClientHttpRequest(outgoing.method(), outgoing.url());
+            outgoing.writeTo(httpRequest, org.springframework.web.reactive.function.client.ExchangeStrategies.withDefaults()).block();
+            var payload = tools.jackson.databind.json.JsonMapper.builder().build().readTree(httpRequest.getBodyAsString().block());
+            assertThat(payload.path("systemInstruction").path("parts").get(0).path("text").asText()).isEqualTo("Trusted rules");
+            var parts = payload.path("contents").get(0).path("parts");
+            assertThat(parts.size()).isEqualTo(2);
+            assertThat(parts.get(0).path("text").asText()).contains("Untrusted context");
+            assertThat(parts.get(1).path("text").asText()).contains("Question?");
+            return success();
+        }, "test-key");
+        var result = provider.generarRespuestaDocumental(new pe.edu.upc.legalai.DTOs.request.IAContextRequestDTO(
+                "Trusted rules","Untrusted context","Question?"));
+        assertThat(result.getModel()).isEqualTo("configured-model");
+    }
+
     private final IARequestDTO request = request();
 
     private static IARequestDTO request() {

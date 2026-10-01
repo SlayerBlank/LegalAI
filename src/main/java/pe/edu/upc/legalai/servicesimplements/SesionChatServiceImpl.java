@@ -1,129 +1,86 @@
 package pe.edu.upc.legalai.servicesimplements;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import pe.edu.upc.legalai.entities.Expediente;
-import pe.edu.upc.legalai.entities.SesionChat;
-import pe.edu.upc.legalai.entities.Usuario;
-import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
-import pe.edu.upc.legalai.exceptions.UnauthorizedException;
-import pe.edu.upc.legalai.repositories.ExpedienteRepository;
-import pe.edu.upc.legalai.repositories.SesionChatRepository;
-import pe.edu.upc.legalai.repositories.UsuarioRepository;
+import pe.edu.upc.legalai.DTOs.request.ChatCreateSessionRequestDTO;
+import pe.edu.upc.legalai.DTOs.request.ChatUpdateSessionRequestDTO;
 import pe.edu.upc.legalai.DTOs.request.SesionChatRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ChatSessionResponseDTO;
 import pe.edu.upc.legalai.DTOs.response.SesionChatResponseDTO;
+import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
+import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
 
 import java.util.List;
 
+/**
+ * Fachada de compatibilidad de /api/chat-sessions. Delega la logica de negocio en
+ * ChatService para no duplicar validaciones de propiedad, borrado en cascada ni auditoria.
+ */
 @Service
 public class SesionChatServiceImpl implements SesionChatService {
 
     private static final String TITULO_POR_DEFECTO = "Nueva conversacion";
 
-    private final SesionChatRepository sesionChatRepository;
-    private final ExpedienteRepository expedienteRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
+    private final ChatService chatService;
 
-    public SesionChatServiceImpl(SesionChatRepository sesionChatRepository,
-                                 ExpedienteRepository expedienteRepository,
-                                 UsuarioRepository usuarioRepository) {
-        this.sesionChatRepository = sesionChatRepository;
-        this.expedienteRepository = expedienteRepository;
-        this.usuarioRepository = usuarioRepository;
+    public SesionChatServiceImpl(UsuarioService usuarioService, ChatService chatService) {
+        this.usuarioService = usuarioService;
+        this.chatService = chatService;
     }
 
     @Override
-    @Transactional
     public SesionChatResponseDTO registrar(Long expedienteId, SesionChatRequestDTO request) {
-        Usuario usuario = obtenerUsuarioAutenticado();
-        Expediente expediente = buscarExpedientePropio(expedienteId, usuario);
-
-        SesionChat sesion = new SesionChat();
-        sesion.setExpediente(expediente);
-        sesion.setUsuario(usuario);
-        sesion.setTitulo(tituloOPorDefecto(request.getTitulo()));
-
-        return toResponse(sesionChatRepository.save(sesion));
+        Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
+        ChatCreateSessionRequestDTO body = new ChatCreateSessionRequestDTO();
+        body.setCaseId(expedienteId);
+        body.setTitle(request.getTitulo());
+        return toLegacy(chatService.crear(body), userId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<SesionChatResponseDTO> listarPorExpediente(Long expedienteId) {
-        Usuario usuario = obtenerUsuarioAutenticado();
-        buscarExpedientePropio(expedienteId, usuario);
-        return sesionChatRepository.findByExpediente_CaseIdOrderByUpdatedAtDesc(expedienteId)
-                .stream().map(this::toResponse).toList();
+        Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
+        return chatService.listar(expedienteId, null, null).stream().map(session -> toLegacy(session, userId)).toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<SesionChatResponseDTO> listarPorUsuarioAutenticado() {
-        Usuario usuario = obtenerUsuarioAutenticado();
-        return sesionChatRepository.findByUsuario_UserIdOrderByUpdatedAtDesc(usuario.getUserId())
-                .stream().map(this::toResponse).toList();
+        Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
+        return chatService.listar(null, null, null).stream().map(session -> toLegacy(session, userId)).toList();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public SesionChatResponseDTO buscarPorId(Long id) {
-        return toResponse(buscarSesionPropia(id, obtenerUsuarioAutenticado()));
+        Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
+        return toLegacy(chatService.obtener(id), userId);
     }
 
     @Override
-    @Transactional
     public SesionChatResponseDTO actualizar(Long id, SesionChatRequestDTO request) {
-        SesionChat sesion = buscarSesionPropia(id, obtenerUsuarioAutenticado());
-        sesion.setTitulo(tituloOPorDefecto(request.getTitulo()));
-        return toResponse(sesionChatRepository.save(sesion));
+        Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
+        ChatUpdateSessionRequestDTO body = new ChatUpdateSessionRequestDTO();
+        body.setTitle(tituloOporDefecto(request.getTitulo()));
+        return toLegacy(chatService.actualizarTitulo(id, body), userId);
     }
 
     @Override
-    @Transactional
     public void eliminar(Long id) {
-        SesionChat sesion = buscarSesionPropia(id, obtenerUsuarioAutenticado());
-        sesionChatRepository.delete(sesion);
+        chatService.eliminar(id);
     }
 
-    // ================= Metodos de apoyo =================
-
-    private Usuario obtenerUsuarioAutenticado() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UnauthorizedException("Usuario no autenticado"));
-    }
-
-    private Expediente buscarExpedientePropio(Long expedienteId, Usuario usuario) {
-        Expediente expediente = expedienteRepository.findById(expedienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Expediente no encontrado con id: " + expedienteId));
-        if (!expediente.getOwner().getUserId().equals(usuario.getUserId())) {
-            throw new ResourceNotFoundException("Expediente no encontrado con id: " + expedienteId);
-        }
-        return expediente;
-    }
-
-    private SesionChat buscarSesionPropia(Long id, Usuario usuario) {
-        SesionChat sesion = sesionChatRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Sesion de chat no encontrada con id: " + id));
-        if (!sesion.getUsuario().getUserId().equals(usuario.getUserId())) {
-            throw new ResourceNotFoundException("Sesion de chat no encontrada con id: " + id);
-        }
-        return sesion;
-    }
-
-    private String tituloOPorDefecto(String titulo) {
-        return (titulo == null || titulo.isBlank()) ? TITULO_POR_DEFECTO : titulo.trim();
-    }
-
-    private SesionChatResponseDTO toResponse(SesionChat sesion) {
+    private static SesionChatResponseDTO toLegacy(ChatSessionResponseDTO session, Long userId) {
         SesionChatResponseDTO dto = new SesionChatResponseDTO();
-        dto.setId(sesion.getId());
-        dto.setExpedienteId(sesion.getExpediente().getCaseId());
-        dto.setUsuarioId(sesion.getUsuario().getUserId());
-        dto.setTitulo(sesion.getTitulo());
-        dto.setCreatedAt(sesion.getCreatedAt());
-        dto.setUpdatedAt(sesion.getUpdatedAt());
+        dto.setId(session.sessionId());
+        dto.setExpedienteId(session.caseId());
+        dto.setUsuarioId(userId);
+        dto.setTitulo(session.title());
+        dto.setCreatedAt(session.createdAt());
+        dto.setUpdatedAt(session.updatedAt());
         return dto;
+    }
+
+    private static String tituloOporDefecto(String titulo) {
+        return titulo == null || titulo.isBlank() ? TITULO_POR_DEFECTO : titulo.trim();
     }
 }
