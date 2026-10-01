@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents/{documentId}/chunks")
-@Tag(name = "Documentos", description = "Documentos propios y sus fragmentos")
+@Tag(name = "Documents", description = "Documentos propios y sus fragmentos")
 public class DocumentChunkController {
     private final DocumentChunkService service;
     public DocumentChunkController(DocumentChunkService service) { this.service = service; }

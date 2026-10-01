@@ -136,6 +136,7 @@ public class ChatServiceImpl implements ChatService {
         SesionChat sesion = buscarSesionPropia(sessionId, usuario);
         sesion.setTitulo(titulo);
         SesionChat guardada = sesiones.save(sesion);
+        auditoria.registrar(usuario, "UPDATE_CHAT_SESSION", sessionId, "title=UPDATED");
         return toResponse(guardada, mensajes.countBySesionId(sessionId));
     }
 

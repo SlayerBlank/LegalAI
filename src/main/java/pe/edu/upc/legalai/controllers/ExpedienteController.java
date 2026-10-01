@@ -23,20 +23,24 @@ import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
+import pe.edu.upc.legalai.servicesinterfaces.DocumentoPreparationService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/cases")
-@Tag(name = "Expedientes", description = "Gestion de expedientes del usuario autenticado")
+@Tag(name = "Cases", description = "Gestion de expedientes del usuario autenticado")
 public class ExpedienteController {
 
     private final IExpedienteService expedienteService;
     private final IDocumentoService documentoService;
+    private final DocumentoPreparationService preparation;
 
-    public ExpedienteController(IExpedienteService expedienteService, IDocumentoService documentoService) {
+    public ExpedienteController(IExpedienteService expedienteService, IDocumentoService documentoService,
+                                DocumentoPreparationService preparation) {
         this.expedienteService = expedienteService;
         this.documentoService = documentoService;
+        this.preparation = preparation;
     }
 
     @Operation(summary = "Crear expediente", description = "Crea un expediente sobre un cliente propio")
@@ -92,7 +96,9 @@ public class ExpedienteController {
         return ResponseEntity.ok(documentoService.listarPorExpediente(caseId));
     }
 
-    @Operation(summary = "Cargar PDF", description = "Carga un PDF en un expediente propio. Limite configurable: 10 MB por defecto. No procesa el contenido.")
+    @Operation(summary = "Cargar PDF", description = "Guarda el PDF e intenta preparar texto, fragmentos y embeddings. "
+            + "La preparacion es sincrona; un fallo posterior a la carga conserva el archivo y devuelve sus metadatos. "
+            + "Consulte /api/documents/{id}/preparation y reintente con /prepare. PROCESSED solo indica texto extraido.")
     @ApiResponse(responseCode = "201", description = "PDF guardado y documento creado")
     @ApiResponse(responseCode = "400", description = "Archivo, nombre o categoria invalidos")
     @ApiResponse(responseCode = "401", description = "JWT ausente o invalido")
@@ -105,6 +111,6 @@ public class ExpedienteController {
             @PathVariable Long caseId,
             @RequestPart("file") MultipartFile file,
             @RequestPart(value = "category", required = false) String category) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(documentoService.subirArchivo(caseId, file, category));
+        return ResponseEntity.status(HttpStatus.CREATED).body(preparation.subirYPreparar(caseId, file, category));
     }
 }

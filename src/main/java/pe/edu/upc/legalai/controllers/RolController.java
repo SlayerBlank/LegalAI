@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/roles")
-@Tag(name = "Roles", description = "Consulta de roles")
+@Tag(name = "Administration", description = "Consulta de roles")
 public class RolController {
 
     private final IRolService rolService;

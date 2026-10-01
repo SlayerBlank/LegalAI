@@ -12,7 +12,7 @@ import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "Usuarios", description = "Perfil del usuario autenticado")
+@Tag(name = "Users", description = "Perfil del usuario autenticado")
 public class UsuarioController {
 
     private final IUsuarioService usuarioService;
