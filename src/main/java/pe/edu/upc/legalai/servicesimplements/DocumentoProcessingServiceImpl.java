@@ -22,7 +22,6 @@ import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.IDocumentChunkRepository;
 import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
-import pe.edu.upc.legalai.servicesinterfaces.DocumentStorage;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoProcessingService;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
