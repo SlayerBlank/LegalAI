@@ -31,33 +31,18 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public void registrar(
-            Usuario usuario,
-            String action,
-            String entityType,
-            Long entityId,
-            String details
-    ) {
+    public void registrar(Usuario usuario, String action, String entityType, Long entityId, String details) {
         AuditLog auditLog = new AuditLog();
         auditLog.setUsuario(usuario);
         auditLog.setAction(action);
         auditLog.setEntityType(entityType);
         auditLog.setEntityId(entityId);
         auditLog.setDetails(details);
-
         auditLogRepository.save(auditLog);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogResponseDTO> buscar(
-            Long userId,
-            String action,
-            String entityType,
-            LocalDateTime from,
-            LocalDateTime to,
-            Pageable pageable
-    ) {
+    public Page<AuditLogResponseDTO> buscar(Long userId, String action, String entityType, LocalDateTime from, LocalDateTime to, Pageable pageable) {
         requireAdmin();
 
         if (from != null && to != null && from.isAfter(to)) {
@@ -96,7 +81,6 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<AuditLogResponseDTO> listarPorUsuario(Long userId) {
         requireAdmin();
 

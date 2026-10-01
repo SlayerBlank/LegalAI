@@ -9,7 +9,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 
-/** Native vector access. JdbcTemplate participates in the existing JPA transaction. */
+/**
+ * Native vector access. JdbcTemplate participates in the existing JPA transaction.
+ * This specialized JDBC/pgvector class intentionally remains outside the I*Repository
+ * naming convention used for JPA interfaces.
+ */
 @Repository
 public class ChunkEmbeddingRepository {
     private final JdbcTemplate jdbc;

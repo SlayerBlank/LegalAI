@@ -28,7 +28,10 @@ import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/documents")
-@Tag(name = "Documents", description = "Consulta y eliminación de documentos propios")
+@Tag(
+        name = "Documents",
+        description = "Consulta y eliminación de documentos propios"
+)
 public class DocumentoController {
 
     private final IDocumentoService documentoService;
@@ -49,19 +52,35 @@ public class DocumentoController {
     }
 
     @PostMapping("/{documentId}/prepare")
-    @Operation(summary = "Preparar o reintentar la preparación de un documento propio", description = "Reutiliza extracción y fragmentos existentes y genera los embeddings pendientes. "
-                    + "Cada etapa confirma su propia transacción; un error no elimina el PDF original.")
-    public DocumentoPreparationResponseDTO preparar(@PathVariable Long documentId) {
-        return preparation.preparar(documentId); }
+    @Operation(
+            summary = "Preparar o reintentar la preparación de un documento propio",
+            description = "Reutiliza extracción y fragmentos existentes y genera los embeddings pendientes. "
+                    + "Cada etapa confirma su propia transacción; un error no elimina el PDF original."
+    )
+    public DocumentoPreparationResponseDTO preparar(
+            @PathVariable Long documentId
+    ) {
+        return preparation.preparar(documentId);
+    }
 
     @GetMapping("/{documentId}/preparation")
-    @Operation(summary = "Consultar si un documento propio está listo para RAG")
-    public DocumentoPreparationResponseDTO estadoPreparacion(@PathVariable Long documentId) {
-        return preparation.estado(documentId); }
+    @Operation(
+            summary = "Consultar si un documento propio está listo para RAG"
+    )
+    public DocumentoPreparationResponseDTO estadoPreparacion(
+            @PathVariable Long documentId
+    ) {
+        return preparation.estado(documentId);
+    }
 
     @GetMapping("/{documentId}/download")
-    @Operation(summary = "Descargar un PDF propio", description = "Solo archivos provenientes de una carga verificable. No expone rutas del servidor.")
-    public ResponseEntity<Resource> descargar(@PathVariable Long documentId) {
+    @Operation(
+            summary = "Descargar un PDF propio",
+            description = "Solo archivos provenientes de una carga verificable. No expone rutas del servidor."
+    )
+    public ResponseEntity<Resource> descargar(
+            @PathVariable Long documentId
+    ) {
         var file = downloads.descargar(documentId);
 
         return ResponseEntity.ok()
@@ -81,39 +100,77 @@ public class DocumentoController {
                 .body(file.resource());
     }
 
-    @Operation(summary = "Extraer texto del PDF", description = "Procesa un PDF propio con texto seleccionable. No realiza OCR.")
-    @ApiResponse(responseCode = "200", description = "Texto extraído y documento procesado")
-    @ApiResponse(responseCode = "409", description = "El documento ya se está procesando")
+    @Operation(
+            summary = "Extraer texto del PDF",
+            description = "Procesa un PDF propio con texto seleccionable. No realiza OCR."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Texto extraído y documento procesado"
+    )
+    @ApiResponse(
+            responseCode = "409",
+            description = "El documento ya se está procesando"
+    )
     @PostMapping("/{documentId}/process")
-    public ResponseEntity<DocumentoResponseDTO> procesar(@PathVariable Long documentId) {
+    public ResponseEntity<DocumentoResponseDTO> procesar(
+            @PathVariable Long documentId
+    ) {
         return ResponseEntity.ok(
                 processingService.procesar(documentId)
         );
     }
 
-    @Operation(summary = "Consultar texto extraído", description = "Devuelve el texto de un documento propio; text es null si no tiene extracción.")
-    @ApiResponse(responseCode = "200", description = "Texto del documento")
+    @Operation(
+            summary = "Consultar texto extraído",
+            description = "Devuelve el texto de un documento propio; text es null si no tiene extracción."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Texto del documento"
+    )
     @GetMapping("/{documentId}/text")
-    public ResponseEntity<DocumentoTextResponseDTO> obtenerTexto(@PathVariable Long documentId) {
+    public ResponseEntity<DocumentoTextResponseDTO> obtenerTexto(
+            @PathVariable Long documentId
+    ) {
         return ResponseEntity.ok(
                 processingService.obtenerTexto(documentId)
         );
     }
 
-    @Operation(summary = "Obtener documento", description = "Obtiene metadatos de un documento propio")
-    @ApiResponse(responseCode = "200", description = "Documento obtenido")
-    @ApiResponse(responseCode = "404", description = "Documento no encontrado")
+    @Operation(
+            summary = "Obtener documento",
+            description = "Obtiene metadatos de un documento propio"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Documento obtenido"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Documento no encontrado"
+    )
     @GetMapping("/{id}")
-    public ResponseEntity<DocumentoResponseDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<DocumentoResponseDTO> buscarPorId(
+            @PathVariable Long id
+    ) {
         return ResponseEntity.ok(
                 documentoService.buscarPorId(id)
         );
     }
 
-    @Operation(summary = "Eliminar documento", description = "Elimina metadatos de un documento propio")
-    @ApiResponse(responseCode = "204", description = "Documento eliminado")
+    @Operation(
+            summary = "Eliminar documento",
+            description = "Elimina metadatos de un documento propio"
+    )
+    @ApiResponse(
+            responseCode = "204",
+            description = "Documento eliminado"
+    )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(
+            @PathVariable Long id
+    ) {
         documentoService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

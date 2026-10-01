@@ -82,7 +82,6 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
 
                 if (document.getProcessingStatus()
                         == EstadoProcesamiento.PROCESSING) {
-
                     throw new DuplicateResourceException(
                             "El documento ya se esta procesando"
                     );
@@ -91,11 +90,8 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
                 document.setProcessingStatus(
                         EstadoProcesamiento.PROCESSING
                 );
-
                 document.setExtractedText(null);
 
-                // Los chunks del texto anterior no deben sobrevivir
-                // a una nueva extracción.
                 chunks.deleteByDocumentoDocumentId(documentId);
 
                 documents.saveAndFlush(document);
@@ -105,8 +101,6 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
 
             started = true;
 
-            // No mantener una transacción SQL abierta mientras
-            // se lee y procesa físicamente el PDF.
             String text;
 
             try (var pdf = Loader.loadPDF(
@@ -114,7 +108,6 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
             )) {
                 if (!pdf.getCurrentAccessPermission()
                         .canExtractContent()) {
-
                     throw new BadRequestException(
                             "El PDF no permite extraer su contenido"
                     );
@@ -209,7 +202,6 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
             });
 
         } catch (RuntimeException failure) {
-
             original.addSuppressed(failure);
 
             LOGGER.error(
