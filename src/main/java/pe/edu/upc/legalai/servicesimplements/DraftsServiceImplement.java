@@ -14,7 +14,10 @@ import pe.edu.upc.legalai.repositories.IExpedienteRepository;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.IDraftsService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
+import pe.edu.upc.legalai.dtos.response.DraftsConsultaResponseDTO;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -124,6 +127,57 @@ public class DraftsServiceImplement implements IDraftsService {
         );
 
         draftsRepository.delete(draft);
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DraftsConsultaResponseDTO> consultarPorExpedienteEstadoYFecha(
+            Long caseId,
+            String status,
+            LocalDate updatedFrom,
+            LocalDate updatedTo
+    ) {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        if (caseId == null || caseId <= 0) {
+            throw new BadRequestException(
+                    "El ID del expediente debe ser positivo"
+            );
+        }
+
+        if (status == null || status.isBlank()) {
+            throw new BadRequestException(
+                    "El estado es obligatorio"
+            );
+        }
+
+        if (updatedFrom == null || updatedTo == null) {
+            throw new BadRequestException(
+                    "Las fechas inicial y final son obligatorias"
+            );
+        }
+
+        if (updatedFrom.isAfter(updatedTo)) {
+            throw new BadRequestException(
+                    "La fecha inicial no puede ser posterior a la fecha final"
+            );
+        }
+
+        obtenerExpedientePropio(caseId, usuario.getUserId());
+
+        LocalDateTime fechaInicial = updatedFrom.atStartOfDay();
+        LocalDateTime fechaFinalExclusiva = updatedTo
+                .plusDays(1)
+                .atStartOfDay();
+
+        return draftsRepository.consultarPorExpedienteEstadoYFecha(
+                usuario.getUserId(),
+                caseId,
+                status,
+                fechaInicial,
+                fechaFinalExclusiva
+        );
     }
 
     private Drafts obtenerBorradorPropio(Long id, Long userId) {
