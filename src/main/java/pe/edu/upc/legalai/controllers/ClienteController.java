@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.IClienteService;
@@ -82,5 +83,12 @@ public class ClienteController {
     @GetMapping("/{clientId}/cases")
     public ResponseEntity<List<ExpedienteResponseDTO>> listarExpedientes(@PathVariable Long clientId) {
         return ResponseEntity.ok(expedienteService.listarPorCliente(clientId));
+    }
+    @Operation(summary = "Cantidad de documentos por cliente",
+            description = "Lista el nombre de cada cliente del usuario autenticado y la cantidad de documentos asociados")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
+    @GetMapping("/document-count")
+    public ResponseEntity<List<ClienteCantidadDocumentosResponseDTO>> listarCantidadDocumentos() {
+        return ResponseEntity.ok(clienteService.listarCantidadDocumentosPorCliente());
     }
 }
