@@ -1,15 +1,43 @@
 package pe.edu.upc.legalai.dtos.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+@Schema(description = "Datos para crear o actualizar un resumen")
 public class SummariesRequestDTO {
 
-    private Long documento_id;
+    @Positive(message = "El ID del documento debe ser positivo")
+    private Long documentId;
 
-    public String getContent() {
-        return content;
+    @Positive(message = "El ID del expediente debe ser positivo")
+    private Long caseId;
+
+    @NotBlank(message = "El tipo de resumen es obligatorio")
+    @Size(
+            max = 100,
+            message = "El tipo de resumen no debe superar los 100 caracteres"
+    )
+    private String summaryType;
+
+    @NotBlank(message = "El contenido es obligatorio")
+    private String content;
+
+    public Long getDocumentId() {
+        return documentId;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
+    }
+
+    public Long getCaseId() {
+        return caseId;
+    }
+
+    public void setCaseId(Long caseId) {
+        this.caseId = caseId;
     }
 
     public String getSummaryType() {
@@ -20,33 +48,11 @@ public class SummariesRequestDTO {
         this.summaryType = summaryType;
     }
 
-    public Long getUsuario_id() {
-        return usuario_id;
+    public String getContent() {
+        return content;
     }
 
-    public void setUsuario_id(Long usuario_id) {
-        this.usuario_id = usuario_id;
+    public void setContent(String content) {
+        this.content = content;
     }
-
-    public Long getExpediente_id() {
-        return expediente_id;
-    }
-
-    public void setExpediente_id(Long expediente_id) {
-        this.expediente_id = expediente_id;
-    }
-
-    public Long getDocumento_id() {
-        return documento_id;
-    }
-
-    public void setDocumento_id(Long documento_id) {
-        this.documento_id = documento_id;
-    }
-
-    private Long expediente_id;
-    private Long usuario_id;
-    private String summaryType;
-    private String content;
-
 }

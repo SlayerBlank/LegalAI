@@ -1,7 +1,18 @@
 package pe.edu.upc.legalai.dtos.response;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
+@Schema(description = "Datos de un resumen")
 public class SummariesResponseDTO {
+
+    private Long summaryId;
+    private Long documentId;
+    private Long caseId;
+    private Long generatedByUserId;
+    private String summaryType;
+    private String content;
+    private LocalDateTime createdAt;
 
     public Long getSummaryId() {
         return summaryId;
@@ -11,28 +22,28 @@ public class SummariesResponseDTO {
         this.summaryId = summaryId;
     }
 
-    public Long getDocumento_id() {
-        return documento_id;
+    public Long getDocumentId() {
+        return documentId;
     }
 
-    public void setDocumento_id(Long documento_id) {
-        this.documento_id = documento_id;
+    public void setDocumentId(Long documentId) {
+        this.documentId = documentId;
     }
 
-    public Long getExpediente_id() {
-        return expediente_id;
+    public Long getCaseId() {
+        return caseId;
     }
 
-    public void setExpediente_id(Long expediente_id) {
-        this.expediente_id = expediente_id;
+    public void setCaseId(Long caseId) {
+        this.caseId = caseId;
     }
 
-    public Long getUsuario_id() {
-        return usuario_id;
+    public Long getGeneratedByUserId() {
+        return generatedByUserId;
     }
 
-    public void setUsuario_id(Long usuario_id) {
-        this.usuario_id = usuario_id;
+    public void setGeneratedByUserId(Long generatedByUserId) {
+        this.generatedByUserId = generatedByUserId;
     }
 
     public String getSummaryType() {
@@ -58,13 +69,4 @@ public class SummariesResponseDTO {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
-    private Long summaryId;
-    private Long documento_id;
-    private Long expediente_id;
-    private Long usuario_id;
-    private String summaryType;
-    private String content;
-    private LocalDateTime createdAt;
-
 }
