@@ -18,4 +18,7 @@ public interface ISesionChatRepository extends JpaRepository<SesionChat, Long> {
 
     List<SesionChat> findByUsuario_UserIdAndExpediente_CaseIdOrderByUpdatedAtDescIdDesc(Long userId, Long caseId,
                                                                                                Pageable pageable);
+
+    List<SesionChat> findByUsuario_UserIdAndExpediente_CaseIdAndUpdatedAtBetweenOrderByUpdatedAtDesc(
+            Long userId, Long caseId, java.time.LocalDateTime from, java.time.LocalDateTime to);
 }

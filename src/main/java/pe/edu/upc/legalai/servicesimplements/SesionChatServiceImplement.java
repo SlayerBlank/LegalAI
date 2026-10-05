@@ -10,6 +10,7 @@ import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 import pe.edu.upc.legalai.servicesinterfaces.ISesionChatService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -48,6 +49,13 @@ public class SesionChatServiceImplement implements ISesionChatService {
     public List<SesionChatResponseDTO> listarPorUsuarioAutenticado() {
         Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
         return chatService.listar(null, null, null).stream().map(session -> toLegacy(session, userId)).toList();
+    }
+
+    @Override
+    public List<SesionChatResponseDTO> filtrarPorExpedienteYRangoActividad(Long caseId, LocalDateTime from, LocalDateTime to) {
+        Long userId = usuarioService.obtenerUsuarioAutenticado().getUserId();
+        return chatService.filtrarPorExpedienteYRangoActividad(caseId, from, to).stream()
+                .map(session -> toLegacy(session, userId)).toList();
     }
 
     @Override

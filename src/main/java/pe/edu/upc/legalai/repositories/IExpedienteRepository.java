@@ -22,6 +22,8 @@ public interface IExpedienteRepository extends JpaRepository<Expediente, Long> {
     List<Expediente> findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
             Long clientId, Long userId, EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo);
 
+    List<Expediente> findByOwnerUserIdAndStatusOrderByUpdatedAtDesc(Long userId, EstadoExpediente status);
+
     Optional<Expediente> findByCaseIdAndOwnerUserId(Long caseId, Long userId);
     // HU-61: titulo del expediente y cantidad de sesiones de chat asociadas
     @Query("""

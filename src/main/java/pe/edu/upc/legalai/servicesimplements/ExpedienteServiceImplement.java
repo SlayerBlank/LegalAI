@@ -2,7 +2,9 @@ package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pe.edu.upc.legalai.dtos.response.ExpedienteAbiertoConAbogadoResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
+import pe.edu.upc.legalai.dtos.response.UsuarioResponseDTO;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.Expediente;
@@ -172,8 +174,39 @@ public class ExpedienteServiceImplement implements IExpedienteService {
     }
     @Override
     @Transactional(readOnly = true)
+    public List<ExpedienteAbiertoConAbogadoResponseDTO> listarCasosAbiertosConAbogado() {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        return expedienteRepository.findByOwnerUserIdAndStatusOrderByUpdatedAtDesc(usuario.getUserId(), EstadoExpediente.OPEN)
+                .stream()
+                .map(this::toOpenWithLawyerResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ExpedienteCantidadSesionesResponseDTO> listarCantidadSesionesPorExpediente() {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         return expedienteRepository.contarSesionesPorExpediente(usuario.getUserId());
+    }
+
+    private ExpedienteAbiertoConAbogadoResponseDTO toOpenWithLawyerResponse(Expediente expediente) {
+        Usuario abogado = expediente.getOwner();
+        UsuarioResponseDTO abogadoResponse = new UsuarioResponseDTO(
+                abogado.getUserId(),
+                abogado.getRol().getRoleId(),
+                abogado.getRol().getName(),
+                abogado.getFullName(),
+                abogado.getEmail(),
+                abogado.getStatus(),
+                abogado.getCreatedAt(),
+                abogado.getUpdatedAt());
+        return new ExpedienteAbiertoConAbogadoResponseDTO(
+                expediente.getCaseId(),
+                expediente.getTitle(),
+                expediente.getDescription(),
+                expediente.getStatus(),
+                expediente.getOpenedAt(),
+                expediente.getUpdatedAt(),
+                abogadoResponse);
     }
 }

@@ -34,6 +34,7 @@ import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 import pe.edu.upc.legalai.servicesinterfaces.RAGService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -104,6 +105,27 @@ public class ChatServiceImpl implements ChatService {
                 : sesiones.findByUsuario_UserIdAndExpediente_CaseIdOrderByUpdatedAtDescIdDesc(
                         usuario.getUserId(), caseId, pageable);
         return propias.stream().map(sesion -> toResponse(sesion, mensajes.countBySesionId(sesion.getId()))).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChatSessionResponseDTO> filtrarPorExpedienteYRangoActividad(Long caseId, LocalDateTime from, LocalDateTime to) {
+        Usuario usuario = usuarios.obtenerUsuarioAutenticado();
+        if (caseId == null || caseId <= 0) {
+            throw new BadRequestException("caseId es obligatorio y debe ser un identificador valido");
+        }
+        if (from == null || to == null) {
+            throw new BadRequestException("from y to son obligatorios");
+        }
+        if (from.isAfter(to)) {
+            throw new BadRequestException("from no puede ser posterior a to");
+        }
+        buscarExpedientePropio(caseId, usuario.getUserId());
+        List<SesionChat> sesionesFiltradas = sesiones.findByUsuario_UserIdAndExpediente_CaseIdAndUpdatedAtBetweenOrderByUpdatedAtDesc(
+                usuario.getUserId(), caseId, from, to);
+        return sesionesFiltradas.stream()
+                .map(sesion -> toResponse(sesion, mensajes.countBySesionId(sesion.getId())))
+                .toList();
     }
 
     @Override

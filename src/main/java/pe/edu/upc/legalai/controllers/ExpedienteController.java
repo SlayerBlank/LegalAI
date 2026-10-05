@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
 import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteAbiertoConAbogadoResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
@@ -114,6 +115,16 @@ public class ExpedienteController {
             @RequestPart(value = "category", required = false) String category) {
         return ResponseEntity.status(HttpStatus.CREATED).body(preparation.subirYPreparar(caseId, file, category));
     }
+    // HU-063 - Query académica: casos abiertos con datos del abogado
+    @Operation(summary = "Casos abiertos con datos del abogado",
+            description = "Lista los expedientes OPEN del usuario autenticado y devuelve la información del abogado propietario asociado")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
+    @ApiResponse(responseCode = "401", description = "JWT ausente o invalido")
+    @GetMapping("/open-with-lawyer")
+    public ResponseEntity<List<ExpedienteAbiertoConAbogadoResponseDTO>> listarCasosAbiertosConAbogado() {
+        return ResponseEntity.ok(expedienteService.listarCasosAbiertosConAbogado());
+    }
+
     @Operation(summary = "Cantidad de sesiones de chat por expediente",
             description = "Lista el titulo de cada expediente del usuario autenticado y la cantidad de sesiones de chat asociadas")
     @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")

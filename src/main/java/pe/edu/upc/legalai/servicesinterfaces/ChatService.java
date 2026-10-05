@@ -7,6 +7,7 @@ import pe.edu.upc.legalai.dtos.response.ChatMessageDTO;
 import pe.edu.upc.legalai.dtos.response.ChatMessageResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ChatSessionResponseDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ChatService {
@@ -14,6 +15,8 @@ public interface ChatService {
     ChatSessionResponseDTO crear(ChatCreateSessionRequestDTO request);
 
     List<ChatSessionResponseDTO> listar(Long caseId, Integer page, Integer size);
+
+    List<ChatSessionResponseDTO> filtrarPorExpedienteYRangoActividad(Long caseId, LocalDateTime from, LocalDateTime to);
 
     ChatSessionResponseDTO obtener(Long sessionId);
 

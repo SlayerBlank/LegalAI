@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,6 +25,7 @@ import pe.edu.upc.legalai.dtos.response.ChatMessageResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ChatSessionResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.ChatService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -53,6 +55,20 @@ public class ChatController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
         return ResponseEntity.ok(chatService.listar(caseId, page, size));
+    }
+
+    // HU-069 - Query académica: sesiones por expediente y rango de actividad
+    @GetMapping("/sessions/filter-by-case-and-date")
+    @Operation(summary = "Filtrar mis sesiones por expediente y rango de ultima actividad",
+            description = "Devuelve solo sesiones del usuario autenticado para el expediente indicado y con updatedAt dentro del rango [from, to].")
+    @ApiResponse(responseCode = "200", description = "Sesiones propias del expediente y rango")
+    @ApiResponse(responseCode = "400", description = "caseId invalido o from posterior a to")
+    @ApiResponse(responseCode = "404", description = "Expediente ajeno o inexistente")
+    public ResponseEntity<List<ChatSessionResponseDTO>> filtrarPorExpedienteYRangoActividad(
+            @RequestParam Long caseId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return ResponseEntity.ok(chatService.filtrarPorExpedienteYRangoActividad(caseId, from, to));
     }
 
     @GetMapping("/sessions/{sessionId}")
