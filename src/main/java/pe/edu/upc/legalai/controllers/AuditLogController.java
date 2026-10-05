@@ -39,10 +39,6 @@ public class AuditLogController {
                     + "con filtros opcionales por usuario, acción, tipo de entidad "
                     + "y rango de fechas"
     )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Página de resultados obtenida"
-    )
     @GetMapping
     public ResponseEntity<Page<AuditLogResponseDTO>> buscar(
             @Parameter(description = "Filtra por identificador de usuario")
