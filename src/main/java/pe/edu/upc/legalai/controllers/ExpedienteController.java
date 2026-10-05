@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
 import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
@@ -112,5 +113,12 @@ public class ExpedienteController {
             @RequestPart("file") MultipartFile file,
             @RequestPart(value = "category", required = false) String category) {
         return ResponseEntity.status(HttpStatus.CREATED).body(preparation.subirYPreparar(caseId, file, category));
+    }
+    @Operation(summary = "Cantidad de sesiones de chat por expediente",
+            description = "Lista el titulo de cada expediente del usuario autenticado y la cantidad de sesiones de chat asociadas")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
+    @GetMapping("/chat-session-count")
+    public ResponseEntity<List<ExpedienteCantidadSesionesResponseDTO>> listarCantidadSesiones() {
+        return ResponseEntity.ok(expedienteService.listarCantidadSesionesPorExpediente());
     }
 }
