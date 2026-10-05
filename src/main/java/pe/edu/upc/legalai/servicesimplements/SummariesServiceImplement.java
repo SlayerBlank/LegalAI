@@ -16,6 +16,10 @@ import pe.edu.upc.legalai.repositories.ISummariesRepository;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.ISummariesService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
+import pe.edu.upc.legalai.dtos.response.SummariesConsultaResponseDTO;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import java.util.List;
 
@@ -140,6 +144,63 @@ public class SummariesServiceImplement implements ISummariesService {
         );
 
         summariesRepository.delete(summary);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SummariesConsultaResponseDTO> consultarPorExpedienteTipoYFecha(
+            Long caseId,
+            String summaryType,
+            LocalDate createdFrom,
+            LocalDate createdTo
+    ) {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+
+        if (caseId == null || caseId <= 0) {
+            throw new BadRequestException(
+                    "El ID del expediente debe ser positivo"
+            );
+        }
+
+        if (summaryType == null || summaryType.isBlank()) {
+            throw new BadRequestException(
+                    "El tipo de resumen es obligatorio"
+            );
+        }
+
+        if (createdFrom == null || createdTo == null) {
+            throw new BadRequestException(
+                    "Las fechas inicial y final son obligatorias"
+            );
+        }
+
+        if (createdFrom.isAfter(createdTo)) {
+            throw new BadRequestException(
+                    "La fecha inicial no puede ser posterior a la fecha final"
+            );
+        }
+
+        expedienteRepository
+                .findByCaseIdAndOwnerUserId(
+                        caseId,
+                        usuario.getUserId()
+                )
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Expediente no encontrado"
+                ));
+
+        LocalDateTime fechaInicial = createdFrom.atStartOfDay();
+        LocalDateTime fechaFinalExclusiva = createdTo
+                .plusDays(1)
+                .atStartOfDay();
+
+        return summariesRepository.consultarPorExpedienteTipoYFecha(
+                usuario.getUserId(),
+                caseId,
+                summaryType,
+                fechaInicial,
+                fechaFinalExclusiva
+        );
     }
 
     private Summaries obtenerResumenPropio(Long id, Long userId) {
