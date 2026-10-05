@@ -1,9 +1,11 @@
 package pe.edu.upc.legalai.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,13 +16,17 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.entities.EstadoExpediente;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.servicesinterfaces.IClienteService;
 import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
