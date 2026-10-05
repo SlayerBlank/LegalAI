@@ -12,7 +12,9 @@ import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.repositories.ClienteRepository;
 import pe.edu.upc.legalai.repositories.ExpedienteRepository;
 import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ExpedienteAbiertoConAbogadoDTO;
 import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.UsuarioResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
 import pe.edu.upc.legalai.servicesinterfaces.UsuarioService;
@@ -106,6 +108,16 @@ public class ExpedienteServiceImpl implements ExpedienteService {
         expedienteRepository.delete(expediente);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteAbiertoConAbogadoDTO> listarAbiertosConAbogadoPorUsuarioAutenticado() {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        return expedienteRepository.listarAbiertosConAbogadoPorUsuario(usuario.getUserId(), EstadoExpediente.OPEN)
+                .stream()
+                .map(this::toAbiertoConAbogadoResponse)
+                .toList();
+    }
+
     private Cliente getCliente(Long clientId, Long userId) {
         return clienteRepository.findByClientIdAndOwnerUserId(clientId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
@@ -153,6 +165,29 @@ public class ExpedienteServiceImpl implements ExpedienteService {
                 expediente.getClosedAt(),
                 expediente.getCreatedAt(),
                 expediente.getUpdatedAt()
+        );
+    }
+
+    private ExpedienteAbiertoConAbogadoDTO toAbiertoConAbogadoResponse(
+            ExpedienteRepository.ExpedienteAbiertoConAbogadoProjection row) {
+        UsuarioResponseDTO abogado = new UsuarioResponseDTO(
+                row.getLawyerId(),
+                row.getLawyerRoleId(),
+                row.getLawyerRoleName(),
+                row.getLawyerName(),
+                row.getLawyerEmail(),
+                row.getLawyerStatus(),
+                row.getLawyerCreatedAt(),
+                row.getLawyerUpdatedAt()
+        );
+
+        return new ExpedienteAbiertoConAbogadoDTO(
+                row.getCaseId(),
+                row.getTitle(),
+                row.getClientName(),
+                abogado,
+                row.getStatus(),
+                row.getOpenedAt()
         );
     }
 }

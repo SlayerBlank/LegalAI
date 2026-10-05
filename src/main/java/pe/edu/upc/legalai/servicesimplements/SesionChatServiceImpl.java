@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.SesionChat;
 import pe.edu.upc.legalai.entities.Usuario;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.exceptions.UnauthorizedException;
 import pe.edu.upc.legalai.repositories.ExpedienteRepository;
@@ -15,6 +16,7 @@ import pe.edu.upc.legalai.schemas.dtos.request.SesionChatRequestDTO;
 import pe.edu.upc.legalai.schemas.dtos.response.SesionChatResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -53,7 +55,25 @@ public class SesionChatServiceImpl implements SesionChatService {
     public List<SesionChatResponseDTO> listarPorExpediente(Long expedienteId) {
         Usuario usuario = obtenerUsuarioAutenticado();
         buscarExpedientePropio(expedienteId, usuario);
-        return sesionChatRepository.findByExpediente_CaseIdOrderByUpdatedAtDesc(expedienteId)
+        return sesionChatRepository.findByUsuario_UserIdAndExpediente_CaseIdOrderByUpdatedAtDesc(usuario.getUserId(), expedienteId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SesionChatResponseDTO> listarPorExpedienteYUltimaActividad(Long expedienteId, LocalDateTime desde, LocalDateTime hasta) {
+        Usuario usuario = obtenerUsuarioAutenticado();
+        buscarExpedientePropio(expedienteId, usuario);
+
+        LocalDateTime fechaDesde = desde != null ? desde : LocalDateTime.of(1970, 1, 1, 0, 0);
+        LocalDateTime fechaHasta = hasta != null ? hasta : LocalDateTime.now().plusYears(100);
+
+        if (fechaDesde.isAfter(fechaHasta)) {
+            throw new BadRequestException("La fecha inicial no puede ser posterior a la fecha final");
+        }
+
+        return sesionChatRepository.findByUsuario_UserIdAndExpediente_CaseIdAndUpdatedAtBetweenOrderByUpdatedAtDesc(
+                        usuario.getUserId(), expedienteId, fechaDesde, fechaHasta)
                 .stream().map(this::toResponse).toList();
     }
 

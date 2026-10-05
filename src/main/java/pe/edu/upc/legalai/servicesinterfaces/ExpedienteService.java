@@ -1,6 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
 import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.DTOs.response.ExpedienteAbiertoConAbogadoDTO;
 import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
 
 import java.util.List;
@@ -18,4 +19,6 @@ public interface ExpedienteService {
     ExpedienteResponseDTO actualizar(Long id, ExpedienteRequestDTO request);
 
     void eliminar(Long id);
+
+    List<ExpedienteAbiertoConAbogadoDTO> listarAbiertosConAbogadoPorUsuarioAutenticado();
 }

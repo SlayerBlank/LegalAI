@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,11 +14,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.edu.upc.legalai.schemas.dtos.request.SesionChatRequestDTO;
 import pe.edu.upc.legalai.schemas.dtos.response.SesionChatResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.SesionChatService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -40,10 +43,18 @@ public class SesionChatController {
         return ResponseEntity.status(HttpStatus.CREATED).body(sesionChatService.registrar(caseId, request));
     }
 
-    @Operation(summary = "Listar sesiones de expediente", description = "Lista sesiones de chat de un expediente propio")
+    @Operation(summary = "Listar sesiones de expediente", description = "Lista sesiones de chat del usuario autenticado para un expediente, opcionalmente filtradas por rango de última actividad")
     @ApiResponse(responseCode = "200", description = "Listado obtenido")
     @GetMapping("/cases/{caseId}/chat-sessions")
-    public ResponseEntity<List<SesionChatResponseDTO>> listarPorExpediente(@PathVariable Long caseId) {
+    public ResponseEntity<List<SesionChatResponseDTO>> listarPorExpediente(
+            @PathVariable Long caseId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        if (from != null || to != null) {
+            return ResponseEntity.ok(sesionChatService.listarPorExpedienteYUltimaActividad(caseId, from, to));
+        }
         return ResponseEntity.ok(sesionChatService.listarPorExpediente(caseId));
     }
 

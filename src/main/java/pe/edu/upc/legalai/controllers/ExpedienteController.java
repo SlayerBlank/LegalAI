@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.edu.upc.legalai.DTOs.request.DocumentoRequestDTO;
 import pe.edu.upc.legalai.DTOs.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.DTOs.response.DocumentoResponseDTO;
+import pe.edu.upc.legalai.DTOs.response.ExpedienteAbiertoConAbogadoDTO;
 import pe.edu.upc.legalai.DTOs.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.ExpedienteService;
@@ -48,6 +49,13 @@ public class ExpedienteController {
     @GetMapping
     public ResponseEntity<List<ExpedienteResponseDTO>> listar() {
         return ResponseEntity.ok(expedienteService.listarPorUsuarioAutenticado());
+    }
+
+    @Operation(summary = "Consultar casos abiertos con datos del abogado", description = "Lista solo los expedientes abiertos del usuario autenticado junto con los datos del abogado propietario")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido")
+    @GetMapping("/open")
+    public ResponseEntity<List<ExpedienteAbiertoConAbogadoDTO>> listarAbiertosConAbogado() {
+        return ResponseEntity.ok(expedienteService.listarAbiertosConAbogadoPorUsuarioAutenticado());
     }
 
     @Operation(summary = "Obtener expediente", description = "Obtiene un expediente propio")
