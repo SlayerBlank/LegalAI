@@ -1,6 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
 import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface IClienteService {
     ClienteResponseDTO actualizar(Long id, ClienteRequestDTO request);
 
     void eliminar(Long id);
+
+    List<ClienteCantidadDocumentosResponseDTO> listarCantidadDocumentosPorCliente();
 }

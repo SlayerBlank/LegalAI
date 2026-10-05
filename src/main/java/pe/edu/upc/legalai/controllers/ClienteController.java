@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
@@ -89,26 +90,11 @@ public class ClienteController {
     public ResponseEntity<List<ExpedienteResponseDTO>> listarExpedientes(@PathVariable Long clientId) {
         return ResponseEntity.ok(expedienteService.listarPorCliente(clientId));
     }
-
-    // HU-068 - Query académica: expedientes por cliente, estado y rango de apertura
-    @Operation(summary = "HU-068 - Filtrar expedientes por estado y rango de apertura",description = "Busca expedientes del cliente propio por estado y fechas inclusivas. " + "El propietario se obtiene del usuario autenticado." )
-    @GetMapping("/{clientId}/cases/filter")
-    public ResponseEntity<List<ExpedienteResponseDTO>> filtrarExpedientes(
-            @Parameter(description = "Estado del expediente", required = true)
-            @RequestParam(required = false) EstadoExpediente status,
-            @Parameter(description = "Fecha inicial inclusiva, formato ISO-8601 yyyy-MM-dd", required = true)
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate openedFrom,
-            @Parameter(description = "Fecha final inclusiva, formato ISO-8601 yyyy-MM-dd", required = true)
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate openedTo,
-            @PathVariable Long clientId) {
-        if (status == null || openedFrom == null || openedTo == null) {
-            throw new BadRequestException("status, openedFrom y openedTo son obligatorios");
-        }
-        return ResponseEntity.ok(expedienteService.filtrarPorClienteEstadoYFechaApertura(
-                clientId, status, openedFrom, openedTo));
+    @Operation(summary = "Cantidad de documentos por cliente",
+            description = "Lista el nombre de cada cliente del usuario autenticado y la cantidad de documentos asociados")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
+    @GetMapping("/document-count")
+    public ResponseEntity<List<ClienteCantidadDocumentosResponseDTO>> listarCantidadDocumentos() {
+        return ResponseEntity.ok(clienteService.listarCantidadDocumentosPorCliente());
     }
 }
