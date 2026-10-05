@@ -1,12 +1,59 @@
 package pe.edu.upc.legalai.dtos.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+@Schema(description = "Datos para crear o actualizar un borrador")
 public class DraftsRequestDTO {
-    public Long getExpediente_id() {
-        return expediente_id;
+
+    @NotNull(message = "El expediente es obligatorio")
+    @Positive(message = "El ID del expediente debe ser positivo")
+    private Long caseId;
+
+    @NotBlank(message = "El título es obligatorio")
+    @Size(
+            max = 255,
+            message = "El título no debe superar los 255 caracteres"
+    )
+    private String title;
+
+    private String prompt;
+
+    @NotBlank(message = "El contenido es obligatorio")
+    private String content;
+
+    @NotBlank(message = "El estado es obligatorio")
+    @Size(
+            max = 50,
+            message = "El estado no debe superar los 50 caracteres"
+    )
+    private String status;
+
+    public Long getCaseId() {
+        return caseId;
     }
 
-    public void setExpediente_id(Long expediente_id) {
-        this.expediente_id = expediente_id;
+    public void setCaseId(Long caseId) {
+        this.caseId = caseId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getPrompt() {
+        return prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
     }
 
     public String getContent() {
@@ -24,36 +71,4 @@ public class DraftsRequestDTO {
     public void setStatus(String status) {
         this.status = status;
     }
-
-    public String getPrompt() {
-        return prompt;
-    }
-
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public Long getUsuario_id() {
-        return usuario_id;
-    }
-
-    public void setUsuario_id(Long usuario_id) {
-        this.usuario_id = usuario_id;
-    }
-
-    private Long expediente_id;
-    private Long usuario_id;
-    private String title;
-    private String prompt;
-    private String content;
-    private String status;
-
 }
