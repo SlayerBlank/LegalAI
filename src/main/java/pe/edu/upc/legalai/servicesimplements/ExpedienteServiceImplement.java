@@ -74,6 +74,21 @@ public class ExpedienteServiceImplement implements IExpedienteService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ExpedienteResponseDTO> filtrarPorClienteEstadoYFechaApertura(
+            Long clientId, EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo) {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        if (openedFrom.isAfter(openedTo)) {
+            throw new BadRequestException("openedFrom no puede ser posterior a openedTo");
+        }
+        getCliente(clientId, usuario.getUserId());
+        return expedienteRepository.findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
+                        clientId, usuario.getUserId(), status, openedFrom, openedTo).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ExpedienteResponseDTO buscarPorId(Long id) {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         return toResponse(getExpediente(id, usuario.getUserId()));

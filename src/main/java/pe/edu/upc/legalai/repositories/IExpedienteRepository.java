@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
+import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.Expediente;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,8 +19,10 @@ public interface IExpedienteRepository extends JpaRepository<Expediente, Long> {
 
     List<Expediente> findByClientClientIdAndOwnerUserId(Long clientId, Long userId);
 
-    Optional<Expediente> findByCaseIdAndOwnerUserId(Long caseId, Long userId);
+    List<Expediente> findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
+            Long clientId, Long userId, EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo);
 
+    Optional<Expediente> findByCaseIdAndOwnerUserId(Long caseId, Long userId);
     // HU-61: titulo del expediente y cantidad de sesiones de chat asociadas
     @Query("""
             SELECT new pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO(
