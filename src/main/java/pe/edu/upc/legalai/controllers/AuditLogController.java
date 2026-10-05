@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import pe.edu.upc.legalai.dtos.response.AuditLogResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -82,6 +83,35 @@ public class AuditLogController {
                         pageable
                 )
         );
+    }
+
+    // HU-070 - Query académica: auditoría mediante filtros combinados
+    @Operation(summary = "HU-070 - Buscar auditoría con filtros combinados", description = "Consulta paginada que requiere al menos dos filtros entre usuario, acción, " + "tipo de entidad y fechas. Solo ADMIN; orden createdAt DESC y logId DESC." )
+    @GetMapping("/advanced-search")
+    public ResponseEntity<Page<AuditLogResponseDTO>> buscarConsultaAcademica(
+            @Parameter(description = "Filtra por identificador de usuario")
+            @RequestParam(required = false) Long userId,
+            @Parameter(description = "Filtra por acción exacta")
+            @RequestParam(required = false) String action,
+            @Parameter(description = "Filtra por tipo de entidad")
+            @RequestParam(required = false) String entityType,
+            @Parameter(description = "Fecha desde, inclusiva; formato ISO-8601 yyyy-MM-dd")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate from,
+            @Parameter(description = "Fecha hasta, inclusiva; formato ISO-8601 yyyy-MM-dd")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate to,
+            @PageableDefault(
+                    page = 0,
+                    size = 20,
+                    sort = {"createdAt", "logId"},
+                    direction = Sort.Direction.DESC
+            )
+            Pageable pageable) {
+        return ResponseEntity.ok(auditLogService.buscarConsultaAcademica(
+                userId, action, entityType, from, to, pageable));
     }
 
     @Operation(
