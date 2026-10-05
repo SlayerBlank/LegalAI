@@ -1,7 +1,9 @@
 package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -17,7 +19,9 @@ import pe.edu.upc.legalai.repositories.AuditLogSpecifications;
 import pe.edu.upc.legalai.repositories.IAuditLogRepository;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -63,6 +67,33 @@ public class AuditLogServiceImpl implements AuditLogService {
                         pageable
                 )
                 .map(this::toResponseDTO);
+    }
+
+    // HU-070 - Query académica: auditoría mediante filtros combinados
+    @Override
+    public Page<AuditLogResponseDTO> buscarConsultaAcademica(
+            Long userId, String action, String entityType, LocalDate from, LocalDate to,
+            Pageable pageable) {
+        requireAdmin();
+        int filterCount = (userId == null ? 0 : 1)
+                + (action == null || action.isBlank() ? 0 : 1)
+                + (entityType == null || entityType.isBlank() ? 0 : 1)
+                + (from == null ? 0 : 1)
+                + (to == null ? 0 : 1);
+        if (filterCount < 2) {
+            throw new BadRequestException("Proporcione al menos dos filtros entre userId, action, entityType, from y to");
+        }
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new BadRequestException("La fecha from no puede ser posterior a to");
+        }
+
+        Pageable deterministicOrder = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("logId")));
+        LocalDateTime fromDateTime = from == null ? null : from.atStartOfDay();
+        LocalDateTime toDateTime = to == null ? null : to.atTime(LocalTime.MAX);
+        return buscar(userId, action, entityType, fromDateTime, toDateTime, deterministicOrder);
     }
 
     @Override

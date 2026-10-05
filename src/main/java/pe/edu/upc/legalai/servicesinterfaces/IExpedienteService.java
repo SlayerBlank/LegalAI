@@ -1,6 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
 import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 
@@ -17,9 +18,13 @@ public interface IExpedienteService {
 
     List<ExpedienteResponseDTO> listarPorEstadoYFecha(EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo);
 
+    List<ExpedienteResponseDTO> filtrarPorClienteEstadoYFechaApertura(
+            Long clientId, EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo);
+
     ExpedienteResponseDTO buscarPorId(Long id);
 
     ExpedienteResponseDTO actualizar(Long id, ExpedienteRequestDTO request);
 
     void eliminar(Long id);
+    List<ExpedienteCantidadSesionesResponseDTO> listarCantidadSesionesPorExpediente();
 }

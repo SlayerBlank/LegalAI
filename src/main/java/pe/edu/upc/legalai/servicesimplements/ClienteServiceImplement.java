@@ -2,6 +2,7 @@ package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
@@ -74,6 +75,13 @@ public class ClienteServiceImplement implements IClienteService {
         Cliente cliente = getCliente(id, usuario.getUserId());
         clienteRepository.delete(cliente);
         auditLogService.registrar(usuario, "DELETE_CLIENT", "Cliente", id, cliente.getFullNameOrCompany());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClienteCantidadDocumentosResponseDTO> listarCantidadDocumentosPorCliente() {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        return clienteRepository.contarDocumentosPorCliente(usuario.getUserId());
     }
 
     private Cliente getCliente(Long id, Long userId) {

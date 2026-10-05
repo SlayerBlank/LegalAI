@@ -1,9 +1,11 @@
 package pe.edu.upc.legalai.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,12 +16,17 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 import pe.edu.upc.legalai.dtos.request.ClienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.entities.EstadoExpediente;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.servicesinterfaces.IClienteService;
 import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -82,5 +89,12 @@ public class ClienteController {
     @GetMapping("/{clientId}/cases")
     public ResponseEntity<List<ExpedienteResponseDTO>> listarExpedientes(@PathVariable Long clientId) {
         return ResponseEntity.ok(expedienteService.listarPorCliente(clientId));
+    }
+    @Operation(summary = "Cantidad de documentos por cliente",
+            description = "Lista el nombre de cada cliente del usuario autenticado y la cantidad de documentos asociados")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
+    @GetMapping("/document-count")
+    public ResponseEntity<List<ClienteCantidadDocumentosResponseDTO>> listarCantidadDocumentos() {
+        return ResponseEntity.ok(clienteService.listarCantidadDocumentosPorCliente());
     }
 }

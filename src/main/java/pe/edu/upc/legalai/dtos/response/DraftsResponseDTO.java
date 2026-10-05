@@ -1,7 +1,20 @@
 package pe.edu.upc.legalai.dtos.response;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
+@Schema(description = "Datos de un borrador")
 public class DraftsResponseDTO {
+
+    private Long draftId;
+    private Long caseId;
+    private Long createdByUserId;
+    private String title;
+    private String prompt;
+    private String content;
+    private String status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public Long getDraftId() {
         return draftId;
@@ -11,44 +24,20 @@ public class DraftsResponseDTO {
         this.draftId = draftId;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public Long getCaseId() {
+        return caseId;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setCaseId(Long caseId) {
+        this.caseId = caseId;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public Long getCreatedByUserId() {
+        return createdByUserId;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getPrompt() {
-        return prompt;
-    }
-
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
+    public void setCreatedByUserId(Long createdByUserId) {
+        this.createdByUserId = createdByUserId;
     }
 
     public String getTitle() {
@@ -59,30 +48,43 @@ public class DraftsResponseDTO {
         this.title = title;
     }
 
-    public Long getUsuario_id() {
-        return usuario_id;
+    public String getPrompt() {
+        return prompt;
     }
 
-    public void setUsuario_id(Long usuario_id) {
-        this.usuario_id = usuario_id;
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
     }
 
-    public Long getExpediente_id() {
-        return expediente_id;
+    public String getContent() {
+        return content;
     }
 
-    public void setExpediente_id(Long expediente_id) {
-        this.expediente_id = expediente_id;
+    public void setContent(String content) {
+        this.content = content;
     }
 
-    private Long draftId;
-    private Long expediente_id;
-    private Long usuario_id;
-    private String title;
-    private String prompt;
-    private String content;
-    private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    public String getStatus() {
+        return status;
+    }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
