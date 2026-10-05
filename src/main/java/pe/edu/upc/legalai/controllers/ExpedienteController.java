@@ -1,9 +1,11 @@
 package pe.edu.upc.legalai.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,10 +25,12 @@ import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
+import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
 import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoPreparationService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -51,11 +56,22 @@ public class ExpedienteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(expedienteService.registrar(request));
     }
 
-    @Operation(summary = "Listar expedientes", description = "Lista expedientes del usuario autenticado")
+    @Operation(summary = "Listar expedientes", description = "Lista expedientes del usuario autenticado. "
+            + "Admite filtros opcionales por estado y por rango de fecha de apertura (HU-66)")
     @ApiResponse(responseCode = "200", description = "Listado obtenido")
+    @ApiResponse(responseCode = "400", description = "Rango de fechas invertido")
     @GetMapping
-    public ResponseEntity<List<ExpedienteResponseDTO>> listar() {
-        return ResponseEntity.ok(expedienteService.listarPorUsuarioAutenticado());
+    public ResponseEntity<List<ExpedienteResponseDTO>> listar(
+            @Parameter(description = "Filtra por estado del expediente")
+            @RequestParam(required = false) EstadoExpediente status,
+            @Parameter(description = "Fecha de apertura desde (inclusive)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate openedFrom,
+            @Parameter(description = "Fecha de apertura hasta (inclusive)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate openedTo) {
+        if (status == null && openedFrom == null && openedTo == null) {
+            return ResponseEntity.ok(expedienteService.listarPorUsuarioAutenticado());
+        }
+        return ResponseEntity.ok(expedienteService.listarPorEstadoYFecha(status, openedFrom, openedTo));
     }
 
     @Operation(summary = "Obtener expediente", description = "Obtiene un expediente propio")

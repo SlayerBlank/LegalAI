@@ -1,6 +1,7 @@
 package pe.edu.upc.legalai.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -14,17 +15,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import pe.edu.upc.legalai.dtos.response.DocumentoPreparationResponseDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoTextResponseDTO;
+import pe.edu.upc.legalai.entities.EstadoProcesamiento;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoDownloadService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoPreparationService;
 import pe.edu.upc.legalai.servicesinterfaces.DocumentoProcessingService;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -135,6 +139,32 @@ public class DocumentoController {
     ) {
         return ResponseEntity.ok(
                 processingService.obtenerTexto(documentId)
+        );
+    }
+
+    @Operation(
+            summary = "Listar documentos pendientes de revision por abogado",
+            description = "Lista los documentos (titulo y expediente al que pertenecen) de todos los expedientes "
+                    + "del abogado indicado que aun no completaron el procesamiento (UPLOADED, PROCESSING o ERROR) "
+                    + "y por lo tanto estan pendientes de revision. Admite filtrar por un unico estado (HU-67)"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Listado obtenido"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "El abogado indicado no existe"
+    )
+    @GetMapping("/pending-review/{abogadoId}")
+    public ResponseEntity<List<DocumentoResponseDTO>> listarPendientesRevision(
+            @PathVariable Long abogadoId,
+            @Parameter(description = "Filtra por un estado de procesamiento especifico; "
+                    + "por defecto incluye UPLOADED, PROCESSING y ERROR")
+            @RequestParam(required = false) EstadoProcesamiento status
+    ) {
+        return ResponseEntity.ok(
+                documentoService.listarPendientesRevision(abogadoId, status)
         );
     }
 

@@ -9,6 +9,7 @@ import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.repositories.IUsuarioRepository;
 import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
@@ -41,15 +42,18 @@ public class DocumentoServiceImplement implements IDocumentoService {
 
     private final IDocumentoRepository documentoRepository;
     private final IExpedienteRepository expedienteRepository;
+    private final IUsuarioRepository usuarioRepository;
     private final IUsuarioService usuarioService;
     private final AuditLogService auditLogService;
 
     public DocumentoServiceImplement(IDocumentoRepository documentoRepository, IExpedienteRepository expedienteRepository,
-                                IUsuarioService usuarioService, AuditLogService auditLogService,
+                                IUsuarioRepository usuarioRepository, IUsuarioService usuarioService,
+                                AuditLogService auditLogService,
                                 @Value("${legalai.storage.path}") String storagePath,
                                 @Value("${legalai.documents.max-file-size}") DataSize maxFileSize) {
         this.documentoRepository = documentoRepository;
         this.expedienteRepository = expedienteRepository;
+        this.usuarioRepository = usuarioRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
         this.storageRoot = Path.of(storagePath).toAbsolutePath().normalize();
@@ -187,6 +191,23 @@ public class DocumentoServiceImplement implements IDocumentoService {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         getExpediente(caseId, usuario.getUserId());
         return documentoRepository.findByExpedienteCaseIdAndExpedienteOwnerUserId(caseId, usuario.getUserId()).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private static final List<EstadoProcesamiento> ESTADOS_PENDIENTES_REVISION =
+            List.of(EstadoProcesamiento.UPLOADED, EstadoProcesamiento.PROCESSING, EstadoProcesamiento.ERROR);
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocumentoResponseDTO> listarPendientesRevision(Long abogadoId, EstadoProcesamiento status) {
+        if (!usuarioRepository.existsById(abogadoId)) {
+            throw new ResourceNotFoundException("Abogado no encontrado");
+        }
+        List<EstadoProcesamiento> statuses = status == null ? ESTADOS_PENDIENTES_REVISION : List.of(status);
+        return documentoRepository
+                .findByExpedienteOwnerUserIdAndProcessingStatusInOrderByCreatedAtAsc(abogadoId, statuses)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }
