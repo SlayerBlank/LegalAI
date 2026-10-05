@@ -1,6 +1,7 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
 import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
+import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 
@@ -23,4 +24,5 @@ public interface IExpedienteService {
     ExpedienteResponseDTO actualizar(Long id, ExpedienteRequestDTO request);
 
     void eliminar(Long id);
+    List<ExpedienteCantidadSesionesResponseDTO> listarCantidadSesionesPorExpediente();
 }

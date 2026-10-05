@@ -2,6 +2,7 @@ package pe.edu.upc.legalai.servicesimplements;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
 import pe.edu.upc.legalai.entities.Cliente;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
 import pe.edu.upc.legalai.entities.Expediente;
@@ -168,5 +169,11 @@ public class ExpedienteServiceImplement implements IExpedienteService {
                 expediente.getCreatedAt(),
                 expediente.getUpdatedAt()
         );
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteCantidadSesionesResponseDTO> listarCantidadSesionesPorExpediente() {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        return expedienteRepository.contarSesionesPorExpediente(usuario.getUserId());
     }
 }
