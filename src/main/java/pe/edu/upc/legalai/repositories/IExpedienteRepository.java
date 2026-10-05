@@ -1,6 +1,7 @@
 package pe.edu.upc.legalai.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import pe.edu.upc.legalai.entities.Expediente;
 
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface IExpedienteRepository extends JpaRepository<Expediente, Long> {
+public interface IExpedienteRepository extends JpaRepository<Expediente, Long>, JpaSpecificationExecutor<Expediente> {
 
     List<Expediente> findByOwnerUserId(Long userId);
 
