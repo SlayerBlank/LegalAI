@@ -119,6 +119,56 @@ class ExpedienteServiceImplTest {
     }
 
     @Test
+    void filtrarPorClienteEstadoYFechaUsaUsuarioAutenticadoYLimitesInclusivos() {
+        LocalDate openedAt = LocalDate.of(2026, 6, 15);
+        Expediente expediente = expediente(20L, EstadoExpediente.OPEN, openedAt);
+        when(expedienteRepository.findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
+                2L, 1L, EstadoExpediente.OPEN, openedAt, openedAt)).thenReturn(List.of(expediente));
+
+        var result = service.filtrarPorClienteEstadoYFechaApertura(
+                2L, EstadoExpediente.OPEN, openedAt, openedAt);
+
+        assertEquals(1, result.size());
+        assertEquals(openedAt, result.get(0).getOpenedAt());
+        verify(clienteRepository).findByClientIdAndOwnerUserId(2L, 1L);
+        verify(expedienteRepository).findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
+                2L, 1L, EstadoExpediente.OPEN, openedAt, openedAt);
+    }
+
+    @Test
+    void filtrarPorClienteEstadoYFechaConRangoInvertidoLanzaBadRequest() {
+        assertThrows(BadRequestException.class, () ->
+                service.filtrarPorClienteEstadoYFechaApertura(2L, EstadoExpediente.OPEN,
+                        LocalDate.of(2026, 6, 16), LocalDate.of(2026, 6, 15)));
+
+        verifyNoInteractions(clienteRepository, expedienteRepository);
+    }
+
+    @Test
+    void filtrarPorClienteAjenoNoConsultaExpedientes() {
+        when(clienteRepository.findByClientIdAndOwnerUserId(9L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(pe.edu.upc.legalai.exceptions.ResourceNotFoundException.class, () ->
+                service.filtrarPorClienteEstadoYFechaApertura(9L, EstadoExpediente.OPEN,
+                        LocalDate.of(2026, 1, 1), LocalDate.of(2026, 10, 7)));
+
+        verify(expedienteRepository, never()).findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
+                any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void filtrarPorClienteSinCoincidenciasDevuelveListaVacia() {
+        when(expedienteRepository.findByClientClientIdAndOwnerUserIdAndStatusAndOpenedAtBetween(
+                2L, 1L, EstadoExpediente.CLOSED, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 10, 7)))
+                .thenReturn(List.of());
+
+        var result = service.filtrarPorClienteEstadoYFechaApertura(
+                2L, EstadoExpediente.CLOSED, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 10, 7));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void eliminarBorraElExpedientePropio() {
         Expediente existente = new Expediente();
         existente.setCaseId(10L);
