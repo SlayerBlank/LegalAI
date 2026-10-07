@@ -22,7 +22,6 @@ import pe.edu.upc.legalai.dtos.response.ClienteCantidadDocumentosResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ClienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.entities.EstadoExpediente;
-import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.servicesinterfaces.IClienteService;
 import pe.edu.upc.legalai.servicesinterfaces.IExpedienteService;
 
@@ -90,6 +89,29 @@ public class ClienteController {
     public ResponseEntity<List<ExpedienteResponseDTO>> listarExpedientes(@PathVariable Long clientId) {
         return ResponseEntity.ok(expedienteService.listarPorCliente(clientId));
     }
+
+    // HU-068 - Query académica: expedientes por cliente, estado y rango de apertura
+    @Operation(summary = "Filtrar expedientes de un cliente (HU-068)",
+            description = "Filtra por estado y rango inclusivo de apertura; solo consulta clientes accesibles "
+                    + "al usuario autenticado")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
+    @ApiResponse(responseCode = "400", description = "Estado o rango de fechas invalido")
+    @ApiResponse(responseCode = "401", description = "JWT ausente o invalido")
+    @ApiResponse(responseCode = "403", description = "Acceso denegado")
+    @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
+    @GetMapping("/{clientId}/cases/filter")
+    public ResponseEntity<List<ExpedienteResponseDTO>> filtrarExpedientes(
+            @PathVariable Long clientId,
+            @Parameter(description = "Estado del expediente", required = true)
+            @RequestParam EstadoExpediente status,
+            @Parameter(description = "Fecha de apertura desde (inclusive)", example = "2026-01-01", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate openedFrom,
+            @Parameter(description = "Fecha de apertura hasta (inclusive)", example = "2026-10-07", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate openedTo) {
+        return ResponseEntity.ok(expedienteService.filtrarPorClienteEstadoYFechaApertura(
+                clientId, status, openedFrom, openedTo));
+    }
+
     @Operation(summary = "Cantidad de documentos por cliente",
             description = "Lista el nombre de cada cliente del usuario autenticado y la cantidad de documentos asociados")
     @ApiResponse(responseCode = "200", description = "Listado obtenido (puede ser vacio)")
