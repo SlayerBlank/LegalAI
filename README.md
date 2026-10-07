@@ -1,5 +1,7 @@
 # LegalAI
 
+https://drive.google.com/drive/folders/1o-SQW3EfJiQexi0UdQpDtcrRRTtK_vR1 
+
 LegalAI es una plataforma web orientada a apoyar a profesionales del derecho en la gestión y análisis de información jurídica.
 
 El proyecto busca centralizar expedientes, clientes y documentos legales en un solo entorno, incorporando herramientas de inteligencia artificial que faciliten la consulta y comprensión de la información almacenada.
