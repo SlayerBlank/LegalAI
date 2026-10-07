@@ -1,9 +1,5 @@
 package pe.edu.upc.legalai.controllers;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,10 +17,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/audit-logs")
-@Tag(
-        name = "Administration",
-        description = "Consulta de auditoría exclusiva de administradores"
-)
 public class AuditLogController {
 
     private final AuditLogService auditLogService;
@@ -33,32 +25,21 @@ public class AuditLogController {
         this.auditLogService = auditLogService;
     }
 
-    @Operation(
-            summary = "Buscar auditoría",
-            description = "Lista la bitácora de auditoría de forma paginada, "
-                    + "con filtros opcionales por usuario, acción, tipo de entidad "
-                    + "y rango de fechas"
-    )
     @GetMapping
     public ResponseEntity<Page<AuditLogResponseDTO>> buscar(
-            @Parameter(description = "Filtra por identificador de usuario")
             @RequestParam(required = false)
             Long userId,
 
-            @Parameter(description = "Filtra por acción exacta")
             @RequestParam(required = false)
             String action,
 
-            @Parameter(description = "Filtra por tipo de entidad")
             @RequestParam(required = false)
             String entityType,
 
-            @Parameter(description = "Fecha/hora desde (inclusive)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime from,
 
-            @Parameter(description = "Fecha/hora hasta (inclusive)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime to,
@@ -81,21 +62,15 @@ public class AuditLogController {
         );
     }
 
-    // HU-070 - Query académica: auditoría mediante filtros combinados
-    @Operation(summary = "HU-070 - Buscar auditoría con filtros combinados", description = "Consulta paginada que requiere al menos dos filtros entre usuario, acción, " + "tipo de entidad y fechas. Solo ADMIN; orden createdAt DESC y logId DESC." )
+    // HU-070 - Auditoría mediante filtros combinados.
     @GetMapping("/advanced-search")
     public ResponseEntity<Page<AuditLogResponseDTO>> buscarConsultaAcademica(
-            @Parameter(description = "Filtra por identificador de usuario")
             @RequestParam(required = false) Long userId,
-            @Parameter(description = "Filtra por acción exacta")
             @RequestParam(required = false) String action,
-            @Parameter(description = "Filtra por tipo de entidad")
             @RequestParam(required = false) String entityType,
-            @Parameter(description = "Fecha desde, inclusiva; formato ISO-8601 yyyy-MM-dd")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate from,
-            @Parameter(description = "Fecha hasta, inclusiva; formato ISO-8601 yyyy-MM-dd")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate to,
@@ -110,14 +85,6 @@ public class AuditLogController {
                 userId, action, entityType, from, to, pageable));
     }
 
-    @Operation(
-            summary = "Obtener registro de auditoría por ID",
-            description = "Busca un registro de auditoría por su identificador"
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Registro encontrado"
-    )
     @GetMapping("/{id}")
     public ResponseEntity<AuditLogResponseDTO> obtenerPorId(
             @PathVariable Long id
@@ -127,15 +94,6 @@ public class AuditLogController {
         );
     }
 
-    @Operation(
-            summary = "Listar auditoría por usuario",
-            description = "Obtiene las acciones registradas para un usuario, "
-                    + "ordenadas de forma descendente"
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "Listado obtenido"
-    )
     @GetMapping("/usuario/{userId}")
     public ResponseEntity<List<AuditLogResponseDTO>> listarPorUsuario(
             @PathVariable Long userId
