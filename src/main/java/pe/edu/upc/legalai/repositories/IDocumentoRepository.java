@@ -3,6 +3,7 @@ package pe.edu.upc.legalai.repositories;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import pe.edu.upc.legalai.entities.Documento;
+import pe.edu.upc.legalai.entities.EstadoProcesamiento;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,4 +22,7 @@ public interface IDocumentoRepository extends JpaRepository<Documento, Long> {
 
     Optional<Documento> findByDocumentIdAndExpedienteCaseIdAndExpedienteOwnerUserId(Long documentId, Long caseId,
                                                                                      Long userId);
+
+    List<Documento> findByExpedienteOwnerUserIdAndProcessingStatusInOrderByCreatedAtAsc(
+            Long userId, List<EstadoProcesamiento> statuses);
 }

@@ -1,5 +1,6 @@
 package pe.edu.upc.legalai.servicesimplements;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upc.legalai.dtos.response.ExpedienteCantidadSesionesResponseDTO;
@@ -11,6 +12,7 @@ import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.repositories.IClienteRepository;
 import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.repositories.ExpedienteSpecifications;
 import pe.edu.upc.legalai.dtos.request.ExpedienteRequestDTO;
 import pe.edu.upc.legalai.dtos.response.ExpedienteResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
@@ -68,6 +70,22 @@ public class ExpedienteServiceImplement implements IExpedienteService {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         getCliente(clientId, usuario.getUserId());
         return expedienteRepository.findByClientClientIdAndOwnerUserId(clientId, usuario.getUserId()).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExpedienteResponseDTO> listarPorEstadoYFecha(EstadoExpediente status, LocalDate openedFrom,
+                                                              LocalDate openedTo) {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        if (openedFrom != null && openedTo != null && openedFrom.isAfter(openedTo)) {
+            throw new BadRequestException("La fecha openedFrom no puede ser posterior a openedTo");
+        }
+        Sort sort = Sort.by(Sort.Direction.DESC, "openedAt").and(Sort.by(Sort.Direction.DESC, "caseId"));
+        return expedienteRepository
+                .findAll(ExpedienteSpecifications.conFiltros(usuario.getUserId(), status, openedFrom, openedTo), sort)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }

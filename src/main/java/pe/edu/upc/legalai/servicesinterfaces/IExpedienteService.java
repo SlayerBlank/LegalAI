@@ -16,6 +16,8 @@ public interface IExpedienteService {
 
     List<ExpedienteResponseDTO> listarPorCliente(Long clientId);
 
+    List<ExpedienteResponseDTO> listarPorEstadoYFecha(EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo);
+
     List<ExpedienteResponseDTO> filtrarPorClienteEstadoYFechaApertura(
             Long clientId, EstadoExpediente status, LocalDate openedFrom, LocalDate openedTo);
 
