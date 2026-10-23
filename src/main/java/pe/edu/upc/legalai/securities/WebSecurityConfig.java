@@ -8,6 +8,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
@@ -49,7 +51,9 @@ public class WebSecurityConfig {
                                 "/webjars/**",
                                 "/error"
                         ).permitAll()
-                        .requestMatchers("/api/roles", "/api/roles/**", "/api/audit-logs", "/api/audit-logs/**").hasRole("ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/users/me").authenticated()
+                        .requestMatchers("/api/users", "/api/users/**", "/api/roles", "/api/roles/**",
+                                "/api/audit-logs", "/api/audit-logs/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
         http.authenticationProvider(authenticationProvider());

@@ -78,6 +78,9 @@ public class CitacionesIAServiceImplement implements ICitacionesIAService {
     @Transactional(readOnly = true)
     public List<CitacionIAResponseDTO> listarPorMensaje(Long sessionId, Long messageId) {
         Long userId = users.obtenerUsuarioAutenticado().getUserId();
+        if (sessionId == null || sessionId <= 0 || messageId == null || messageId <= 0) {
+            throw new BadRequestException("Los identificadores de sesion y mensaje deben ser positivos");
+        }
         var message = messages.findByMessageIdAndSesionIdAndSenderType(messageId, sessionId, SenderType.ASSISTANT)
                 .orElseThrow(() -> new ResourceNotFoundException("Respuesta de chat no encontrada"));
         verifyOwner(message, userId);
