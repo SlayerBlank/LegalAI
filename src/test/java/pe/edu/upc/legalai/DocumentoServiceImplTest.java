@@ -11,10 +11,14 @@ import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.repositories.IExpedienteRepository;
 import pe.edu.upc.legalai.repositories.IUsuarioRepository;
+import pe.edu.upc.legalai.entities.Rol;
+import pe.edu.upc.legalai.servicesimplements.DocumentStorage;
 import pe.edu.upc.legalai.servicesimplements.DocumentoServiceImplement;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +33,7 @@ class DocumentoServiceImplTest {
     private IUsuarioRepository usuarioRepository;
     private IUsuarioService usuarioService;
     private AuditLogService auditLogService;
+    private DocumentStorage documentStorage;
     private DocumentoServiceImplement service;
 
     private Usuario usuario;
@@ -40,8 +45,9 @@ class DocumentoServiceImplTest {
         usuarioRepository = mock(IUsuarioRepository.class);
         usuarioService = mock(IUsuarioService.class);
         auditLogService = mock(AuditLogService.class);
+        documentStorage = mock(DocumentStorage.class);
         service = new DocumentoServiceImplement(documentoRepository, expedienteRepository, usuarioRepository,
-                usuarioService, auditLogService, System.getProperty("java.io.tmpdir"), DataSize.ofMegabytes(10));
+                usuarioService, auditLogService, documentStorage, System.getProperty("java.io.tmpdir"), DataSize.ofMegabytes(10));
 
         usuario = new Usuario();
         usuario.setUserId(1L);
@@ -109,5 +115,58 @@ class DocumentoServiceImplTest {
         service.eliminar(7L);
 
         verify(documentoRepository).delete(existente);
+    }
+
+    @Test
+    void listarPendientesRevisionDeOtroAbogadoSinSerAdminDevuelve404() {
+        when(usuarioRepository.existsById(2L)).thenReturn(true);
+
+        assertThrows(ResourceNotFoundException.class, () -> service.listarPendientesRevision(2L, null));
+        verifyNoInteractions(documentoRepository);
+    }
+
+    @Test
+    void listarPendientesRevisionDeOtroAbogadoSiendoAdminEstaPermitido() {
+        Rol admin = new Rol();
+        admin.setName("ADMIN");
+        usuario.setRol(admin);
+        when(usuarioRepository.existsById(2L)).thenReturn(true);
+        when(documentoRepository.findByExpedienteOwnerUserIdAndProcessingStatusInOrderByCreatedAtAsc(eq(2L), any()))
+                .thenReturn(List.of(documento(4L, EstadoProcesamiento.ERROR)));
+
+        assertEquals(1, service.listarPendientesRevision(2L, null).size());
+    }
+
+    @Test
+    void eliminarBorraTambienElPdfVerificadoDelStorage() throws Exception {
+        Path pdf = Files.createTempFile("legalai-test", ".pdf");
+        Documento existente = documento(8L, EstadoProcesamiento.PROCESSED);
+        existente.setStorageUrl(pdf.getFileName().toString());
+        when(documentoRepository.findByDocumentIdAndExpedienteOwnerUserId(8L, 1L)).thenReturn(java.util.Optional.of(existente));
+        when(documentStorage.resolve(existente.getStorageUrl())).thenReturn(pdf);
+
+        service.eliminar(8L);
+
+        verify(documentoRepository).delete(existente);
+        assertFalse(Files.exists(pdf));
+    }
+
+    @Test
+    void eliminarConservaElArchivoSiNoTieneCargaVerificable() throws Exception {
+        Path pdf = Files.createTempFile("legalai-test", ".pdf");
+        try {
+            Documento existente = documento(9L, EstadoProcesamiento.UPLOADED);
+            existente.setStorageUrl(pdf.getFileName().toString());
+            when(documentoRepository.findByDocumentIdAndExpedienteOwnerUserId(9L, 1L)).thenReturn(java.util.Optional.of(existente));
+            doThrow(new ResourceNotFoundException("sin carga")).when(documentStorage).verifyUpload(existente);
+            when(documentStorage.resolve(any())).thenReturn(pdf);
+
+            service.eliminar(9L);
+
+            verify(documentoRepository).delete(existente);
+            assertTrue(Files.exists(pdf));
+        } finally {
+            Files.deleteIfExists(pdf);
+        }
     }
 }

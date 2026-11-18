@@ -59,6 +59,8 @@ class AuditLogServiceImplTest {
     private AuditLog entry(Long id) {
         Usuario usuario = new Usuario();
         usuario.setUserId(7L);
+        usuario.setFullName("Ana Torres");
+        usuario.setEmail("ana@example.com");
         AuditLog log = new AuditLog();
         log.setLogId(id);
         log.setUsuario(usuario);
@@ -117,6 +119,8 @@ class AuditLogServiceImplTest {
         assertEquals(5, result.getTotalElements());
         assertEquals(9L, result.getContent().get(0).logId());
         assertEquals(7L, result.getContent().get(0).userId());
+        assertEquals("Ana Torres", result.getContent().get(0).userFullName());
+        assertEquals("ana@example.com", result.getContent().get(0).userEmail());
     }
 
     @Test

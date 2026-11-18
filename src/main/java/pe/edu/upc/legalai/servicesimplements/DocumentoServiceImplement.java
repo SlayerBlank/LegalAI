@@ -45,10 +45,11 @@ public class DocumentoServiceImplement implements IDocumentoService {
     private final IUsuarioRepository usuarioRepository;
     private final IUsuarioService usuarioService;
     private final AuditLogService auditLogService;
+    private final DocumentStorage documentStorage;
 
     public DocumentoServiceImplement(IDocumentoRepository documentoRepository, IExpedienteRepository expedienteRepository,
                                 IUsuarioRepository usuarioRepository, IUsuarioService usuarioService,
-                                AuditLogService auditLogService,
+                                AuditLogService auditLogService, DocumentStorage documentStorage,
                                 @Value("${legalai.storage.path}") String storagePath,
                                 @Value("${legalai.documents.max-file-size}") DataSize maxFileSize) {
         this.documentoRepository = documentoRepository;
@@ -56,6 +57,7 @@ public class DocumentoServiceImplement implements IDocumentoService {
         this.usuarioRepository = usuarioRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
+        this.documentStorage = documentStorage;
         this.storageRoot = Path.of(storagePath).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize.toBytes();
         if (this.maxFileSize <= 0) {
@@ -201,6 +203,12 @@ public class DocumentoServiceImplement implements IDocumentoService {
     @Override
     @Transactional(readOnly = true)
     public List<DocumentoResponseDTO> listarPendientesRevision(Long abogadoId, EstadoProcesamiento status) {
+        Usuario actual = usuarioService.obtenerUsuarioAutenticado();
+        // Solo el propio abogado o un ADMIN. Para terceros se responde 404, igual que en el resto
+        // de recursos propios, para no revelar que el usuario existe.
+        if (!actual.getUserId().equals(abogadoId) && !esAdmin(actual)) {
+            throw new ResourceNotFoundException("Abogado no encontrado");
+        }
         if (!usuarioRepository.existsById(abogadoId)) {
             throw new ResourceNotFoundException("Abogado no encontrado");
         }
@@ -224,8 +232,39 @@ public class DocumentoServiceImplement implements IDocumentoService {
     public void eliminar(Long id) {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         Documento documento = getDocumento(id, usuario.getUserId());
+        Path archivo = archivoSubidoVerificado(documento);
         documentoRepository.delete(documento);
         auditLogService.registrar(usuario, "DELETE_DOCUMENT", "Documento", id, documento.getFileName());
+        if (archivo != null) {
+            // El PDF se borra solo si la transaccion confirma; ante un rollback se conserva.
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        cleanup(archivo);
+                    }
+                });
+            } else {
+                cleanup(archivo);
+            }
+        }
+    }
+
+    // Solo se borran archivos con carga multipart verificable: un storageUrl registrado por metadatos
+    // lo escribe el cliente y podria apuntar al archivo de otro documento.
+    private Path archivoSubidoVerificado(Documento documento) {
+        try {
+            documentStorage.verifyUpload(documento);
+            return documentStorage.resolve(documento.getStorageUrl());
+        } catch (IOException | RuntimeException ex) {
+            LOGGER.warn("Documento {} sin archivo verificable en storage; solo se eliminan sus metadatos",
+                    documento.getDocumentId());
+            return null;
+        }
+    }
+
+    private static boolean esAdmin(Usuario usuario) {
+        return usuario.getRol() != null && "ADMIN".equalsIgnoreCase(usuario.getRol().getName());
     }
 
     private Expediente getExpediente(Long caseId, Long userId) {
