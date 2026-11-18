@@ -46,6 +46,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<AuditLogResponseDTO> buscar(Long userId, String action, String entityType, LocalDateTime from, LocalDateTime to, Pageable pageable) {
         requireAdmin();
 
@@ -71,6 +72,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     // HU-070 - Query académica: auditoría mediante filtros combinados
     @Override
+    @Transactional(readOnly = true)
     public Page<AuditLogResponseDTO> buscarConsultaAcademica(
             Long userId, String action, String entityType, LocalDate from, LocalDate to,
             Pageable pageable) {
@@ -112,6 +114,7 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AuditLogResponseDTO> listarPorUsuario(Long userId) {
         requireAdmin();
 
@@ -126,6 +129,8 @@ public class AuditLogServiceImpl implements AuditLogService {
         return new AuditLogResponseDTO(
                 auditLog.getLogId(),
                 auditLog.getUsuario().getUserId(),
+                auditLog.getUsuario().getFullName(),
+                auditLog.getUsuario().getEmail(),
                 auditLog.getAction(),
                 auditLog.getEntityType(),
                 auditLog.getEntityId(),
