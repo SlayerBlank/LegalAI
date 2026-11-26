@@ -36,3 +36,7 @@ src/main/resources/application-local.properties
 keyu20231c576
 keyu20231c576.pub
 src/main/resources/application-local.properties
+
+### Variables de entorno locales (claves como GEMINI_API_KEY) ###
+.env
+.env.*
