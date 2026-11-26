@@ -11,6 +11,8 @@ import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.repositories.IExpedienteRepository;
 import pe.edu.upc.legalai.repositories.IUsuarioRepository;
 import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
+import pe.edu.upc.legalai.dtos.request.DocumentoUpdateRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoPendienteResponseDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.IDocumentoService;
@@ -18,10 +20,8 @@ import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.io.IOException;
 import java.io.InputStream;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 @Service
 public class DocumentoServiceImplement implements IDocumentoService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentoServiceImplement.class);
-    private final Path storageRoot;
     private final long maxFileSize;
 
     private final IDocumentoRepository documentoRepository;
@@ -50,7 +49,6 @@ public class DocumentoServiceImplement implements IDocumentoService {
     public DocumentoServiceImplement(IDocumentoRepository documentoRepository, IExpedienteRepository expedienteRepository,
                                 IUsuarioRepository usuarioRepository, IUsuarioService usuarioService,
                                 AuditLogService auditLogService, DocumentStorage documentStorage,
-                                @Value("${legalai.storage.path}") String storagePath,
                                 @Value("${legalai.documents.max-file-size}") DataSize maxFileSize) {
         this.documentoRepository = documentoRepository;
         this.expedienteRepository = expedienteRepository;
@@ -58,7 +56,6 @@ public class DocumentoServiceImplement implements IDocumentoService {
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
         this.documentStorage = documentStorage;
-        this.storageRoot = Path.of(storagePath).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize.toBytes();
         if (this.maxFileSize <= 0) {
             throw new IllegalArgumentException("El limite de archivos debe ser positivo");
@@ -71,53 +68,16 @@ public class DocumentoServiceImplement implements IDocumentoService {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         Expediente expediente = getExpediente(caseId, usuario.getUserId());
         validateUpload(file, category);
-        Path target = null;
-        boolean created = false;
+        DocumentStorage.StoredFile stored = null;
         try (InputStream input = file.getInputStream()) {
             byte[] header = input.readNBytes(8);
-            // Signature only: no PDF parsing or text extraction in this phase.
-            if (header.length != 8 || header[0] != '%' || header[1] != 'P' || header[2] != 'D'
-                    || header[3] != 'F' || header[4] != '-'
-                    || (header[5] != '1' && header[5] != '2') || header[6] != '.'
-                    || header[7] < '0' || header[7] > '9') {
+            if (!tieneCabeceraPdf(header)) {
                 throw new BadRequestException("El contenido del archivo no tiene una cabecera PDF valida");
             }
-            Files.createDirectories(storageRoot);
-            Path realRoot = storageRoot.toRealPath();
-            String storageId = UUID.randomUUID() + ".pdf";
-            target = realRoot.resolve(storageId).normalize();
-            if (!target.startsWith(realRoot)) {
-                throw new BadRequestException("Nombre de archivo invalido");
-            }
-            long written = header.length;
-            try (var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-                created = true;
-                Path createdFile = target;
-                // Also handles failures occurring at commit, after this method returns.
-                if (TransactionSynchronizationManager.isSynchronizationActive()) {
-                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                        @Override
-                        public void afterCompletion(int status) {
-                            if (status == STATUS_ROLLED_BACK) {
-                                cleanup(createdFile);
-                            } else if (status == STATUS_UNKNOWN) {
-                                LOGGER.error("Resultado de transaccion desconocido para archivo {}; requiere conciliacion", storageId);
-                            }
-                        }
-                    });
-                }
-                output.write(header);
-                byte[] buffer = new byte[8192];
-                int count;
-                while ((count = input.read(buffer)) != -1) {
-                    written += count;
-                    if (written > maxFileSize) {
-                        throw new BadRequestException("El archivo supera el tamano maximo permitido");
-                    }
-                    output.write(buffer, 0, count);
-                }
-            }
-            if (written != file.getSize()) {
+            // TA-03: el archivo se guarda mediante DocumentStorage.
+            stored = documentStorage.store(header, input, maxFileSize);
+            borrarArchivoSiHayRollback(stored);
+            if (stored.sizeBytes() != file.getSize()) {
                 throw new BadRequestException("El tamano del archivo no coincide con su contenido");
             }
             Documento documento = new Documento();
@@ -125,8 +85,8 @@ public class DocumentoServiceImplement implements IDocumentoService {
             documento.setUploadedBy(usuario);
             documento.setFileName(file.getOriginalFilename());
             documento.setFileType("application/pdf");
-            documento.setStorageUrl(storageId);
-            documento.setSizeBytes(written);
+            documento.setStorageUrl(stored.storageId());
+            documento.setSizeBytes(stored.sizeBytes());
             documento.setCategory(category);
             documento.setProcessingStatus(EstadoProcesamiento.UPLOADED);
             Documento saved = documentoRepository.saveAndFlush(documento);
@@ -134,13 +94,38 @@ public class DocumentoServiceImplement implements IDocumentoService {
                     "caseId=" + caseId + "; fileName=" + saved.getFileName());
             return toResponse(saved);
         } catch (BadRequestException ex) {
-            if (created) cleanup(target);
+            if (stored != null) cleanup(stored.path());
             throw ex;
         } catch (IOException | RuntimeException ex) {
             LOGGER.error("Error al guardar documento. caseId={}, fileName={}", caseId, file.getOriginalFilename(), ex);
-            if (created) cleanup(target);
+            if (stored != null) cleanup(stored.path());
             throw new DocumentUploadException(ex);
         }
+    }
+
+    // Solo se valida la firma "%PDF-1.x" o "%PDF-2.x"; el texto se extrae despues (HU-058).
+    private boolean tieneCabeceraPdf(byte[] header) {
+        return header.length == 8 && header[0] == '%' && header[1] == 'P' && header[2] == 'D'
+                && header[3] == 'F' && header[4] == '-' && (header[5] == '1' || header[5] == '2')
+                && header[6] == '.' && header[7] >= '0' && header[7] <= '9';
+    }
+
+    // Si la transaccion falla al confirmar (despues de este metodo), el PDF guardado se elimina.
+    private void borrarArchivoSiHayRollback(DocumentStorage.StoredFile stored) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    cleanup(stored.path());
+                } else if (status == STATUS_UNKNOWN) {
+                    LOGGER.error("Resultado de transaccion desconocido para archivo {}; requiere conciliacion",
+                            stored.storageId());
+                }
+            }
+        });
     }
 
     private void validateUpload(MultipartFile file, String category) {
@@ -202,7 +187,7 @@ public class DocumentoServiceImplement implements IDocumentoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocumentoResponseDTO> listarPendientesRevision(Long abogadoId, EstadoProcesamiento status) {
+    public List<DocumentoPendienteResponseDTO> listarPendientesRevision(Long abogadoId, EstadoProcesamiento status) {
         Usuario actual = usuarioService.obtenerUsuarioAutenticado();
         // Solo el propio abogado o un ADMIN. Para terceros se responde 404, igual que en el resto
         // de recursos propios, para no revelar que el usuario existe.
@@ -212,11 +197,14 @@ public class DocumentoServiceImplement implements IDocumentoService {
         if (!usuarioRepository.existsById(abogadoId)) {
             throw new ResourceNotFoundException("Abogado no encontrado");
         }
+        if (status != null && !ESTADOS_PENDIENTES_REVISION.contains(status)) {
+            throw new BadRequestException("El estado debe ser UPLOADED, PROCESSING o ERROR");
+        }
         List<EstadoProcesamiento> statuses = status == null ? ESTADOS_PENDIENTES_REVISION : List.of(status);
         return documentoRepository
                 .findByExpedienteOwnerUserIdAndProcessingStatusInOrderByCreatedAtAsc(abogadoId, statuses)
                 .stream()
-                .map(this::toResponse)
+                .map(this::toPendienteResponse)
                 .toList();
     }
 
@@ -225,6 +213,19 @@ public class DocumentoServiceImplement implements IDocumentoService {
     public DocumentoResponseDTO buscarPorId(Long id) {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         return toResponse(getDocumento(id, usuario.getUserId()));
+    }
+
+    @Override
+    @Transactional
+    public DocumentoResponseDTO actualizar(Long id, DocumentoUpdateRequestDTO request) {
+        Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
+        Documento documento = getDocumento(id, usuario.getUserId());
+        String category = request.getCategory() == null ? null : request.getCategory().trim();
+        documento.setCategory(category == null || category.isEmpty() ? null : category);
+        Documento saved = documentoRepository.saveAndFlush(documento);
+        auditLogService.registrar(usuario, "UPDATE_DOCUMENT", "Documento", saved.getDocumentId(),
+                "category=" + saved.getCategory());
+        return toResponse(saved);
     }
 
     @Override
@@ -283,6 +284,24 @@ public class DocumentoServiceImplement implements IDocumentoService {
         documento.setStorageUrl(request.getStorageUrl());
         documento.setCategory(request.getCategory());
         documento.setSizeBytes(request.getSizeBytes());
+    }
+
+    private DocumentoPendienteResponseDTO toPendienteResponse(Documento documento) {
+        DocumentoPendienteResponseDTO response = new DocumentoPendienteResponseDTO(
+                documento.getDocumentId(),
+                documento.getExpediente().getCaseId(),
+                documento.getExpediente().getTitle(),
+                documento.getFileName(),
+                documento.getFileType(),
+                documento.getStorageUrl(),
+                documento.getCategory(),
+                documento.getSizeBytes(),
+                documento.getProcessingStatus(),
+                documento.getCreatedAt(),
+                documento.getUpdatedAt()
+        );
+        response.setExtractedTextLength(documento.getExtractedText() == null ? 0 : documento.getExtractedText().length());
+        return response;
     }
 
     private DocumentoResponseDTO toResponse(Documento documento) {

@@ -146,4 +146,24 @@ class DraftsServiceImplTest {
         draft.setStatus("DRAFT");
         return draft;
     }
+
+    // ---------- HU-045 / HU-046: borrador ajeno
+
+    @Test
+    void actualizarBorradorAjenoLanzaResourceNotFoundYNoGuarda() {
+        when(draftsRepository.findByDraftIdAndCreatedByUserIdAndExpedienteOwnerUserId(50L, 1L, 1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.actualizar(50L, request("Editado")));
+        verify(draftsRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void eliminarBorradorAjenoLanzaResourceNotFoundYNoBorra() {
+        when(draftsRepository.findByDraftIdAndCreatedByUserIdAndExpedienteOwnerUserId(50L, 1L, 1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.eliminar(50L));
+        verify(draftsRepository, never()).delete(any());
+    }
 }

@@ -23,6 +23,9 @@ public interface IDocumentoRepository extends JpaRepository<Documento, Long> {
     Optional<Documento> findByDocumentIdAndExpedienteCaseIdAndExpedienteOwnerUserId(Long documentId, Long caseId,
                                                                                      Long userId);
 
+    // HU-021: dependencias de un expediente antes de eliminarlo.
+    long countByExpedienteCaseId(Long caseId);
+
     List<Documento> findByExpedienteOwnerUserIdAndProcessingStatusInOrderByCreatedAtAsc(
             Long userId, List<EstadoProcesamiento> statuses);
 }

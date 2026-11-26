@@ -1,5 +1,11 @@
 package pe.edu.upc.legalai.servicesimplements;
 
+import pe.edu.upc.legalai.exceptions.DuplicateResourceException;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
+import pe.edu.upc.legalai.repositories.IDraftsRepository;
+import pe.edu.upc.legalai.repositories.ISesionChatRepository;
+import pe.edu.upc.legalai.repositories.ISummariesRepository;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +35,23 @@ public class ExpedienteServiceImplement implements IExpedienteService {
     private final IClienteRepository clienteRepository;
     private final IUsuarioService usuarioService;
     private final AuditLogService auditLogService;
+    private final IDocumentoRepository documentoRepository;
+    private final IDraftsRepository draftsRepository;
+    private final ISesionChatRepository sesionChatRepository;
+    private final ISummariesRepository summariesRepository;
 
     public ExpedienteServiceImplement(IExpedienteRepository expedienteRepository, IClienteRepository clienteRepository,
-                                 IUsuarioService usuarioService, AuditLogService auditLogService) {
+                                 IUsuarioService usuarioService, AuditLogService auditLogService,
+                                 IDocumentoRepository documentoRepository, IDraftsRepository draftsRepository,
+                                 ISesionChatRepository sesionChatRepository, ISummariesRepository summariesRepository) {
         this.expedienteRepository = expedienteRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioService = usuarioService;
         this.auditLogService = auditLogService;
+        this.documentoRepository = documentoRepository;
+        this.draftsRepository = draftsRepository;
+        this.sesionChatRepository = sesionChatRepository;
+        this.summariesRepository = summariesRepository;
     }
 
     @Override
@@ -134,8 +150,22 @@ public class ExpedienteServiceImplement implements IExpedienteService {
     public void eliminar(Long id) {
         Usuario usuario = usuarioService.obtenerUsuarioAutenticado();
         Expediente expediente = getExpediente(id, usuario.getUserId());
+        validarSinDependencias(expediente.getCaseId());
         auditLogService.registrar(usuario, "DELETE_CASE", "Expediente", expediente.getCaseId(), expediente.getTitle());
         expedienteRepository.delete(expediente);
+    }
+
+    // HU-021: un expediente con informacion asociada no se elimina, para preservar la integridad.
+    private void validarSinDependencias(Long caseId) {
+        long documentos = documentoRepository.countByExpedienteCaseId(caseId);
+        long borradores = draftsRepository.countByExpedienteCaseId(caseId);
+        long sesiones = sesionChatRepository.countByExpediente_CaseId(caseId);
+        long resumenes = summariesRepository.countByExpedienteCaseId(caseId);
+        if (documentos + borradores + sesiones + resumenes > 0) {
+            throw new DuplicateResourceException("No se puede eliminar el expediente porque tiene informacion asociada: "
+                    + documentos + " documento(s), " + borradores + " borrador(es), "
+                    + sesiones + " sesion(es) de chat y " + resumenes + " resumen(es). Eliminelos primero.");
+        }
     }
 
     private Cliente getCliente(Long clientId, Long userId) {

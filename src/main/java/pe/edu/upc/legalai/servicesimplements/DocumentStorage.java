@@ -3,11 +3,16 @@ package pe.edu.upc.legalai.servicesimplements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import pe.edu.upc.legalai.entities.Documento;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.repositories.IAuditLogRepository;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.UUID;
 
 @Component
 public class DocumentStorage {
@@ -17,6 +22,38 @@ public class DocumentStorage {
     public DocumentStorage(@Value("${legalai.storage.path}") String storagePath, IAuditLogRepository audit) {
         this.storageRoot = Path.of(storagePath).toAbsolutePath().normalize();
         this.audit = audit;
+    }
+
+    /** Archivo guardado en el storage: nombre interno, ruta real y bytes escritos. */
+    public record StoredFile(String storageId, Path path, long sizeBytes) { }
+
+    /**
+     * HU-022: guarda el PDF con un nombre interno aleatorio. Recibe la cabecera ya leida y el resto
+     * del contenido. Si se supera el limite o falla la escritura, borra el archivo parcial.
+     */
+    public StoredFile store(byte[] header, InputStream rest, long maxBytes) throws IOException {
+        Files.createDirectories(storageRoot);
+        Path root = storageRoot.toRealPath();
+        String storageId = UUID.randomUUID() + ".pdf";
+        Path target = root.resolve(storageId).normalize();
+        long written = header.length;
+        try (OutputStream output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.WRITE)) {
+            output.write(header);
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = rest.read(buffer)) != -1) {
+                written += count;
+                if (written > maxBytes) {
+                    throw new BadRequestException("El archivo supera el tamano maximo permitido");
+                }
+                output.write(buffer, 0, count);
+            }
+        } catch (IOException | RuntimeException ex) {
+            Files.deleteIfExists(target);
+            throw ex;
+        }
+        return new StoredFile(storageId, target, written);
     }
 
     public void verifyUpload(Documento document) {
