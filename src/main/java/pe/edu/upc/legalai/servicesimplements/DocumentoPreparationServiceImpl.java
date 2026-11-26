@@ -18,6 +18,7 @@ import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.exceptions.UnauthorizedException;
 import pe.edu.upc.legalai.repositories.ChunkEmbeddingRepository;
 import pe.edu.upc.legalai.repositories.IDocumentChunkRepository;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.servicesinterfaces.*;
 
 @Service
@@ -28,6 +29,7 @@ public class DocumentoPreparationServiceImpl implements DocumentoPreparationServ
     private final DocumentChunkService chunking;
     private final SemanticSearchService semantic;
     private final IDocumentChunkRepository chunks;
+    private final IDocumentoRepository documentRows;
     private final ChunkEmbeddingRepository vectors;
     private final IUsuarioService users;
     private final AuditLogService audit;
@@ -37,12 +39,13 @@ public class DocumentoPreparationServiceImpl implements DocumentoPreparationServ
     public DocumentoPreparationServiceImpl(IDocumentoService documents, DocumentoProcessingService processing,
             DocumentChunkService chunking, SemanticSearchService semantic, IDocumentChunkRepository chunks,
             ChunkEmbeddingRepository vectors, IUsuarioService users, AuditLogService audit,
-            PlatformTransactionManager manager) {
+            PlatformTransactionManager manager, IDocumentoRepository documentRows) {
         this.documents = documents;
         this.processing = processing;
         this.chunking = chunking;
         this.semantic = semantic;
         this.chunks = chunks;
+        this.documentRows = documentRows;
         this.vectors = vectors;
         this.users = users;
         this.audit = audit;
@@ -83,8 +86,9 @@ public class DocumentoPreparationServiceImpl implements DocumentoPreparationServ
         var user = users.obtenerUsuarioAutenticado();
         String stage = "EXTRACTION";
         try {
-            if (document.getProcessingStatus() == EstadoProcesamiento.PROCESSING) {
-                throw new DuplicateResourceException("El documento ya se esta procesando");
+            if (DocumentoProcessingService.procesamientoEnCurso(document.getProcessingStatus(),
+                    document.getUpdatedAt())) {
+                throw new DuplicateResourceException("El documento ya se esta procesando; intente nuevamente en unos minutos");
             }
             if (document.getProcessingStatus() != EstadoProcesamiento.PROCESSED || !document.getHasExtractedText()) {
                 processing.procesar(documentId);
@@ -101,6 +105,11 @@ public class DocumentoPreparationServiceImpl implements DocumentoPreparationServ
                     documentId, "stage=EMBEDDINGS; result=SUCCESS"));
         } catch (RuntimeException failure) {
             String failedStage = stage;
+            // HU-029: si fallan los fragmentos o los embeddings, el documento queda en ERROR.
+            // Los fallos de extraccion ya los marca DocumentoProcessingServiceImpl.
+            if ("CHUNKS".equals(failedStage) || "EMBEDDINGS".equals(failedStage)) {
+                marcarError(documentId, failure);
+            }
             try {
                 auditTransaction.executeWithoutResult(tx -> audit.registrar(user, "PREPARE_DOCUMENT", "Documento",
                         documentId, "stage=" + failedStage + "; result=FAILED; type=" + failure.getClass().getSimpleName()));
@@ -109,6 +118,18 @@ public class DocumentoPreparationServiceImpl implements DocumentoPreparationServ
                 LOG.error("No se pudo auditar preparacion documentId={} stage={}", documentId, failedStage);
             }
             throw failure;
+        }
+    }
+
+    private void marcarError(Long documentId, RuntimeException failure) {
+        try {
+            auditTransaction.executeWithoutResult(tx -> documentRows.findById(documentId).ifPresent(row -> {
+                row.setProcessingStatus(EstadoProcesamiento.ERROR);
+                documentRows.saveAndFlush(row);
+            }));
+        } catch (RuntimeException markFailure) {
+            failure.addSuppressed(markFailure);
+            LOG.error("No se pudo marcar ERROR en la preparacion documentId={}", documentId);
         }
     }
 
@@ -124,19 +145,23 @@ public class DocumentoPreparationServiceImpl implements DocumentoPreparationServ
         long count = chunks.countByDocumentoDocumentId(documentId);
         long embedded = 0;
         String stage;
-        if (document.getProcessingStatus() == EstadoProcesamiento.PROCESSING) {
+        EstadoProcesamiento status = document.getProcessingStatus();
+        if (status == EstadoProcesamiento.PROCESSING) {
             stage = "PROCESSING";
-        } else if (document.getProcessingStatus() == EstadoProcesamiento.ERROR) {
+        } else if (status == EstadoProcesamiento.ERROR && !document.getHasExtractedText()) {
             stage = "EXTRACTION_ERROR";
-        } else if (document.getProcessingStatus() != EstadoProcesamiento.PROCESSED || !document.getHasExtractedText()) {
+        } else if (status == EstadoProcesamiento.UPLOADED || !document.getHasExtractedText()) {
             stage = "EXTRACTION_REQUIRED";
         } else if (count == 0) {
+            // PROCESSED, o ERROR con texto: fallaron los fragmentos (HU-029).
             stage = "CHUNKS_REQUIRED";
         } else {
             try {
                 vectors.validateSchema();
                 embedded = vectors.countValidChunks(documentId);
-                stage = embedded == count ? "READY" : "EMBEDDINGS_REQUIRED";
+                // Con ERROR nunca se considera listo: hay que volver a preparar el documento.
+                stage = embedded == count && status == EstadoProcesamiento.PROCESSED
+                        ? "READY" : "EMBEDDINGS_REQUIRED";
             } catch (EmbeddingException schemaFailure) {
                 stage = "EMBEDDINGS_UNAVAILABLE";
             }

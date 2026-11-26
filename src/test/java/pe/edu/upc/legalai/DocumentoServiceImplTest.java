@@ -8,6 +8,10 @@ import pe.edu.upc.legalai.entities.EstadoProcesamiento;
 import pe.edu.upc.legalai.entities.Expediente;
 import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
+import pe.edu.upc.legalai.exceptions.BadRequestException;
+import pe.edu.upc.legalai.dtos.request.DocumentoUpdateRequestDTO;
+import org.springframework.mock.web.MockMultipartFile;
+import java.util.Optional;
 import pe.edu.upc.legalai.repositories.IDocumentoRepository;
 import pe.edu.upc.legalai.repositories.IExpedienteRepository;
 import pe.edu.upc.legalai.repositories.IUsuarioRepository;
@@ -23,6 +27,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -47,7 +52,7 @@ class DocumentoServiceImplTest {
         auditLogService = mock(AuditLogService.class);
         documentStorage = mock(DocumentStorage.class);
         service = new DocumentoServiceImplement(documentoRepository, expedienteRepository, usuarioRepository,
-                usuarioService, auditLogService, documentStorage, System.getProperty("java.io.tmpdir"), DataSize.ofMegabytes(10));
+                usuarioService, auditLogService, documentStorage, DataSize.ofMegabytes(10));
 
         usuario = new Usuario();
         usuario.setUserId(1L);
@@ -58,6 +63,7 @@ class DocumentoServiceImplTest {
     private Documento documento(Long id, EstadoProcesamiento status) {
         Expediente expediente = new Expediente();
         expediente.setCaseId(5L);
+        expediente.setTitle("Desalojo Lopez");
         Documento documento = new Documento();
         documento.setDocumentId(id);
         documento.setExpediente(expediente);
@@ -168,5 +174,124 @@ class DocumentoServiceImplTest {
         } finally {
             Files.deleteIfExists(pdf);
         }
+    }
+
+    // ---------- HU-67
+
+    @Test
+    void listarPendientesRevisionIncluyeElTituloDelExpediente() {
+        when(documentoRepository.findByExpedienteOwnerUserIdAndProcessingStatusInOrderByCreatedAtAsc(eq(1L), any()))
+                .thenReturn(List.of(documento(3L, EstadoProcesamiento.UPLOADED)));
+
+        var result = service.listarPendientesRevision(1L, null);
+
+        assertEquals("Desalojo Lopez", result.get(0).getCaseTitle());
+        assertEquals("contrato-3.pdf", result.get(0).getFileName());
+    }
+
+    @Test
+    void listarPendientesRevisionConEstadoNoPendienteLanzaBadRequest() {
+        assertThrows(BadRequestException.class,
+                () -> service.listarPendientesRevision(1L, EstadoProcesamiento.PROCESSED));
+        verifyNoInteractions(documentoRepository);
+    }
+
+    // ---------- HU-025
+
+    @Test
+    void actualizarCambiaSoloLaCategoriaDelDocumentoPropio() {
+        Documento existente = documento(7L, EstadoProcesamiento.PROCESSED);
+        existente.setStorageUrl("archivo.pdf");
+        when(documentoRepository.findByDocumentIdAndExpedienteOwnerUserId(7L, 1L)).thenReturn(Optional.of(existente));
+        when(documentoRepository.saveAndFlush(existente)).thenReturn(existente);
+        DocumentoUpdateRequestDTO request = new DocumentoUpdateRequestDTO();
+        request.setCategory("  Contratos  ");
+
+        var result = service.actualizar(7L, request);
+
+        assertEquals("Contratos", result.getCategory());
+        assertEquals("contrato-7.pdf", result.getFileName());
+        assertEquals("archivo.pdf", existente.getStorageUrl());
+        verify(auditLogService).registrar(eq(usuario), eq("UPDATE_DOCUMENT"), eq("Documento"), eq(7L), any());
+    }
+
+    @Test
+    void actualizarConCategoriaVaciaLaElimina() {
+        Documento existente = documento(7L, EstadoProcesamiento.PROCESSED);
+        existente.setCategory("Antigua");
+        when(documentoRepository.findByDocumentIdAndExpedienteOwnerUserId(7L, 1L)).thenReturn(Optional.of(existente));
+        when(documentoRepository.saveAndFlush(existente)).thenReturn(existente);
+        DocumentoUpdateRequestDTO request = new DocumentoUpdateRequestDTO();
+        request.setCategory("   ");
+
+        assertNull(service.actualizar(7L, request).getCategory());
+    }
+
+    @Test
+    void actualizarDocumentoAjenoLanzaResourceNotFoundYNoGuarda() {
+        when(documentoRepository.findByDocumentIdAndExpedienteOwnerUserId(8L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.actualizar(8L, new DocumentoUpdateRequestDTO()));
+        verify(documentoRepository, never()).saveAndFlush(any());
+    }
+
+    // ---------- HU-022
+
+    private Expediente expedientePropio() {
+        Expediente expediente = new Expediente();
+        expediente.setCaseId(5L);
+        when(expedienteRepository.findByCaseIdAndOwnerUserId(5L, 1L)).thenReturn(Optional.of(expediente));
+        return expediente;
+    }
+
+    @Test
+    void subirArchivoGuardaElPdfMedianteDocumentStorageYAsociaElExpediente() throws Exception {
+        expedientePropio();
+        byte[] pdf = "%PDF-1.7\ncontenido".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "contrato.pdf", "application/pdf", pdf);
+        when(documentStorage.store(any(), any(), anyLong()))
+                .thenReturn(new DocumentStorage.StoredFile("uuid.pdf", Path.of("uuid.pdf"), pdf.length));
+        when(documentoRepository.saveAndFlush(any())).thenAnswer(inv -> {
+            Documento d = inv.getArgument(0);
+            d.setDocumentId(20L);
+            return d;
+        });
+
+        var result = service.subirArchivo(5L, file, "Contratos");
+
+        assertEquals(20L, result.getDocumentId());
+        assertEquals(5L, result.getCaseId());
+        assertEquals("uuid.pdf", result.getStorageUrl());
+        assertEquals(EstadoProcesamiento.UPLOADED, result.getProcessingStatus());
+        verify(documentStorage).store(any(), any(), eq(DataSize.ofMegabytes(10).toBytes()));
+    }
+
+    @Test
+    void subirArchivoQueNoEsPdfLanzaBadRequestSinGuardar() throws Exception {
+        expedientePropio();
+        MockMultipartFile file = new MockMultipartFile("file", "foto.png", "image/png", new byte[]{1, 2, 3});
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> service.subirArchivo(5L, file, null));
+
+        assertEquals("Solo se permiten archivos PDF con Content-Type application/pdf", ex.getMessage());
+        verify(documentStorage, never()).store(any(), any(), anyLong());
+    }
+
+    @Test
+    void subirArchivoConCabeceraFalsaLanzaBadRequestSinGuardar() throws Exception {
+        expedientePropio();
+        MockMultipartFile file = new MockMultipartFile("file", "falso.pdf", "application/pdf", "no es un pdf".getBytes());
+
+        assertThrows(BadRequestException.class, () -> service.subirArchivo(5L, file, null));
+        verify(documentStorage, never()).store(any(), any(), anyLong());
+    }
+
+    @Test
+    void subirArchivoAExpedienteAjenoLanzaResourceNotFound() throws Exception {
+        when(expedienteRepository.findByCaseIdAndOwnerUserId(6L, 1L)).thenReturn(Optional.empty());
+        MockMultipartFile file = new MockMultipartFile("file", "a.pdf", "application/pdf", "%PDF-1.7 x".getBytes());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.subirArchivo(6L, file, null));
+        verify(documentStorage, never()).store(any(), any(), anyLong());
     }
 }

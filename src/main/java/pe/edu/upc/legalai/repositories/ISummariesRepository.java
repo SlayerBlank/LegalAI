@@ -15,6 +15,10 @@ import java.util.Optional;
 public interface ISummariesRepository
         extends JpaRepository<Summaries, Long> {
 
+    // HU-021: dependencias de un expediente antes de eliminarlo.
+    long countByExpedienteCaseId(Long caseId);
+
+
     List<Summaries> findByGeneratedByUserIdOrderBySummaryIdDesc(
             Long userId
     );

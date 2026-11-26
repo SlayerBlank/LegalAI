@@ -10,6 +10,9 @@ import java.util.List;
 @Repository
 public interface ISesionChatRepository extends JpaRepository<SesionChat, Long> {
 
+    // HU-021: dependencias de un expediente antes de eliminarlo.
+    long countByExpediente_CaseId(Long caseId);
+
     List<SesionChat> findByExpediente_CaseIdOrderByUpdatedAtDesc(Long caseId);
 
     List<SesionChat> findByUsuario_UserIdOrderByUpdatedAtDesc(Long userId);

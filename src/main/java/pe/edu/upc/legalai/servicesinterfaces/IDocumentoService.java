@@ -1,5 +1,8 @@
 package pe.edu.upc.legalai.servicesinterfaces;
 
+import pe.edu.upc.legalai.dtos.request.DocumentoUpdateRequestDTO;
+import pe.edu.upc.legalai.dtos.response.DocumentoPendienteResponseDTO;
+
 import pe.edu.upc.legalai.dtos.request.DocumentoRequestDTO;
 import pe.edu.upc.legalai.dtos.response.DocumentoResponseDTO;
 import pe.edu.upc.legalai.entities.EstadoProcesamiento;
@@ -15,9 +18,11 @@ public interface IDocumentoService {
 
     List<DocumentoResponseDTO> listarPorExpediente(Long caseId);
 
-    List<DocumentoResponseDTO> listarPendientesRevision(Long abogadoId, EstadoProcesamiento status);
+    List<DocumentoPendienteResponseDTO> listarPendientesRevision(Long abogadoId, EstadoProcesamiento status);
 
     DocumentoResponseDTO buscarPorId(Long id);
+
+    DocumentoResponseDTO actualizar(Long id, DocumentoUpdateRequestDTO request);
 
     void eliminar(Long id);
 }

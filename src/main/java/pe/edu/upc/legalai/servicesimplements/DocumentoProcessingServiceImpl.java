@@ -79,10 +79,12 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
 
                 storage.verifyUpload(document);
 
-                if (document.getProcessingStatus()
-                        == EstadoProcesamiento.PROCESSING) {
+                // Un PROCESSING antiguo (servidor caido a mitad del proceso) se puede reintentar.
+                if (DocumentoProcessingService.procesamientoEnCurso(
+                        document.getProcessingStatus(),
+                        document.getUpdatedAt())) {
                     throw new DuplicateResourceException(
-                            "El documento ya se esta procesando"
+                            "El documento ya se esta procesando; intente nuevamente en unos minutos"
                     );
                 }
 
@@ -212,6 +214,16 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
         }
     }
 
+    // HU-028: explica por que el documento todavia no tiene texto.
+    private String mensajeSinTexto(EstadoProcesamiento status) {
+        return switch (status) {
+            case UPLOADED -> "El documento aun no ha sido procesado. Procese el documento para extraer su texto.";
+            case PROCESSING -> "El documento se esta procesando. Intente nuevamente en unos minutos.";
+            case ERROR -> "No se pudo extraer el texto del documento. Puede reintentar el procesamiento.";
+            case PROCESSED -> "El documento fue procesado pero no tiene texto extraido.";
+        };
+    }
+
     private Documento owned(
             Long id,
             Long userId
@@ -245,9 +257,14 @@ public class DocumentoProcessingServiceImpl implements DocumentoProcessingServic
                         )
                 );
 
+        String text = document.getExtractedText();
+        EstadoProcesamiento status = document.getProcessingStatus();
+
         return new DocumentoTextResponseDTO(
                 documentId,
-                document.getExtractedText()
+                status,
+                text,
+                text != null ? null : mensajeSinTexto(status)
         );
     }
 }

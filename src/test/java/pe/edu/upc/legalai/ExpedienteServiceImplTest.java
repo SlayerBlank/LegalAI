@@ -12,6 +12,12 @@ import pe.edu.upc.legalai.entities.Usuario;
 import pe.edu.upc.legalai.exceptions.BadRequestException;
 import pe.edu.upc.legalai.repositories.IClienteRepository;
 import pe.edu.upc.legalai.repositories.IExpedienteRepository;
+import pe.edu.upc.legalai.repositories.IDocumentoRepository;
+import pe.edu.upc.legalai.repositories.IDraftsRepository;
+import pe.edu.upc.legalai.repositories.ISesionChatRepository;
+import pe.edu.upc.legalai.repositories.ISummariesRepository;
+import pe.edu.upc.legalai.exceptions.DuplicateResourceException;
+import pe.edu.upc.legalai.exceptions.ResourceNotFoundException;
 import pe.edu.upc.legalai.servicesimplements.ExpedienteServiceImplement;
 import pe.edu.upc.legalai.servicesinterfaces.AuditLogService;
 import pe.edu.upc.legalai.servicesinterfaces.IUsuarioService;
@@ -31,6 +37,10 @@ class ExpedienteServiceImplTest {
     private IClienteRepository clienteRepository;
     private IUsuarioService usuarioService;
     private AuditLogService auditLogService;
+    private IDocumentoRepository documentoRepository;
+    private IDraftsRepository draftsRepository;
+    private ISesionChatRepository sesionChatRepository;
+    private ISummariesRepository summariesRepository;
     private ExpedienteServiceImplement service;
 
     private Usuario usuario;
@@ -42,7 +52,12 @@ class ExpedienteServiceImplTest {
         clienteRepository = mock(IClienteRepository.class);
         usuarioService = mock(IUsuarioService.class);
         auditLogService = mock(AuditLogService.class);
-        service = new ExpedienteServiceImplement(expedienteRepository, clienteRepository, usuarioService, auditLogService);
+        documentoRepository = mock(IDocumentoRepository.class);
+        draftsRepository = mock(IDraftsRepository.class);
+        sesionChatRepository = mock(ISesionChatRepository.class);
+        summariesRepository = mock(ISummariesRepository.class);
+        service = new ExpedienteServiceImplement(expedienteRepository, clienteRepository, usuarioService, auditLogService,
+                documentoRepository, draftsRepository, sesionChatRepository, summariesRepository);
 
         usuario = new Usuario();
         usuario.setUserId(1L);
@@ -177,5 +192,28 @@ class ExpedienteServiceImplTest {
         service.eliminar(10L);
 
         verify(expedienteRepository).delete(existente);
+    }
+
+    @Test
+    void eliminarExpedienteAjenoLanzaResourceNotFoundYNoBorra() {
+        when(expedienteRepository.findByCaseIdAndOwnerUserId(11L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.eliminar(11L));
+        verify(expedienteRepository, never()).delete(any(Expediente.class));
+    }
+
+    @Test
+    void eliminarExpedienteConDocumentosLanzaConflictoYNoBorra() {
+        Expediente existente = expediente(12L, EstadoExpediente.OPEN, LocalDate.of(2026, 1, 1));
+        when(expedienteRepository.findByCaseIdAndOwnerUserId(12L, 1L)).thenReturn(Optional.of(existente));
+        when(documentoRepository.countByExpedienteCaseId(12L)).thenReturn(2L);
+        when(draftsRepository.countByExpedienteCaseId(12L)).thenReturn(1L);
+
+        DuplicateResourceException ex = assertThrows(DuplicateResourceException.class, () -> service.eliminar(12L));
+
+        assertTrue(ex.getMessage().contains("2 documento(s)"));
+        assertTrue(ex.getMessage().contains("1 borrador(es)"));
+        verify(expedienteRepository, never()).delete(any(Expediente.class));
+        verifyNoInteractions(auditLogService);
     }
 }

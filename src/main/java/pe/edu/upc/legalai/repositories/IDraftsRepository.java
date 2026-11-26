@@ -14,6 +14,9 @@ import java.util.Optional;
 @Repository
 public interface IDraftsRepository extends JpaRepository<Drafts, Long> {
 
+    // HU-021: dependencias de un expediente antes de eliminarlo.
+    long countByExpedienteCaseId(Long caseId);
+
     List<Drafts>
     findByCreatedByUserIdAndExpedienteOwnerUserIdOrderByDraftIdDesc(
             Long createdByUserId,
