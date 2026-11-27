@@ -49,6 +49,45 @@ Los clientes, expedientes, documentos y conversaciones están asociados a sus re
 
 El acceso a las funcionalidades protegidas se realiza mediante autenticación.
 
+## CORS para Render y Railway
+
+Configurar en el servicio backend de Railway, sin comillas:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=https://legalai-frontend-bnd5.onrender.com,http://localhost:3000,http://localhost:5173,http://localhost:4200
+```
+
+La variable existente reemplaza los valores predeterminados; por eso incluye los
+orígenes locales. La propiedad `app.cors.allowed-origins`, si se configura por separado,
+tiene prioridad. Usar orígenes exactos, sin rutas ni barra final. Sin configuración,
+solo se permiten los tres orígenes locales anteriores.
+
+Después de desplegar estos cambios y la variable, verificar en PowerShell:
+
+```powershell
+curl.exe -i -X OPTIONS "https://legalai-arqweb-01eb.up.railway.app/api/auth/login" -H "Origin: https://legalai-frontend-bnd5.onrender.com" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: authorization,content-type"
+```
+
+Se espera HTTP 200, `Access-Control-Allow-Origin` con el dominio exacto de Render,
+`Access-Control-Allow-Methods` incluyendo POST y `Access-Control-Allow-Headers`
+incluyendo authorization y content-type. Repetir cambiando ruta y método para:
+
+- Registro: `POST /api/auth/register`.
+- Usuario autenticado: `GET /api/users/me`.
+- Carga: `POST /api/cases/{caseId}/documents/upload`.
+- Descarga: `GET /api/documents/{documentId}/download`.
+- Edición de chat: `PATCH /api/chat/sessions/{sessionId}`.
+
+Un origen ajeno debe recibir 403 sin `Access-Control-Allow-Origin`.
+Con una cuenta de prueba, comprobar desde Render registro, login, consulta autenticada,
+carga multipart y descarga de un documento propio. Las respuestas exponen
+`Content-Disposition` y `X-Request-Id` cuando estén presentes; CORS no genera esas
+cabeceras. Las rutas protegidas siguen requiriendo JWT.
+
+Validación local: `./mvnw verify` (Windows: `.\mvnw.cmd verify`).
+`CorsSecurityTest` prueba la cadena real de seguridad con endpoints de prueba y servicios
+simulados; no sustituye la comprobación funcional en producción con una cuenta válida.
+
 ## Tecnologías principales
 
 El backend de LegalAI ha sido desarrollado principalmente utilizando:
